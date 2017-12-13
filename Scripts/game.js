@@ -1,24 +1,15 @@
 
 
-
+//Load all the global stuff
 var renderer, scene, camera, pointLight, spotLight;
-
-// field variables
 var fieldWidth = 400, fieldHeight = 200;
-
-// paddle variables
-var paddleWidth, paddleHeight, paddleDepth, paddleQuality;
-var paddle1DirY = 0, paddle2DirY = 0, paddleSpeed = 3;
-
-// ball variables
-var ball, paddle1, paddle2;
-var ballDirX = 1, ballDirY = 1, ballSpeed = 2;
+var moverWidth, moverHeight, moverDepth;
+var moverSpeed = 3;
+var player, turret1;
 var backPanel, bacMaterial;
 var healthBar;
-
 var difficulty = 10;
-var shots = [ball];
-
+var shots = [];
 var context = new (window.AudioContext || window.webkitAudioContext)();
 var source = null;
 var audioBuffer = null;
@@ -35,43 +26,54 @@ var beatDetect3 = [];
 var beatDetect4 = [];
 var beatAverages = [0, 0, 0, 0];
 var beatPeaks = [0, 0, 0, 0];
+var fileInput = document.querySelector('input[type="file"]');
 
-function setup()
-{
+
+//So that stuff gets called
+function setup(){	
+
 	createScene();
 	draw();
 }
-function playSound() {
-  // source is global so we can call .noteOff() later.
+
+//To start playing the sound and start running the buffer through our analyser
+function playSound(){
+
   source = context.createBufferSource();
   source.buffer = audioBuffer;
   source.loop = false;
   source.connect(analyser);
   analyser.connect(context.destination);
-  source.start(1); // Play immediately.
+  source.start(1); 
   var buttons = document.querySelectorAll('button');
   buttons[0].disabled = true;
-  if(healthBar)
-  {
+  if(healthBar) {
+
   	healthBar.scale.y = 1;
   	healthBar.material.color.r = 0;
   	healthBar.material.color.g = 1;
+  	player.position.y = 0;
+	player.position.z = 50;
   }
   source.onended = function(event) {
+
 	var buttons = document.querySelectorAll('button');
   	buttons[0].disabled = false;
-}
+	}
 }
 
+//Stop the sound when we lose
 function stopSound() {
+
   if (source) {
     source.stop(0);
   }
 }
 
+//We take the sounds and pull the raw bytes out of it for us to run the Web Audio Api thing
 function initSound(arrayBuffer) {
+
   context.decodeAudioData(arrayBuffer, function(buffer) {
-    // audioBuffer is global to reuse the decoded audio later.
     audioBuffer = buffer;
     var buttons = document.querySelectorAll('button');
     buttons[0].disabled = false;
@@ -85,315 +87,251 @@ function initSound(arrayBuffer) {
 
 }
 
-var fileInput = document.querySelector('input[type="file"]');
-fileInput.addEventListener('change', function(e) {  
+
+
+//Whenever the player selects the file to use we pull the source and initSound
+//I tried to set up some default files for people to use, but it's nearly impossible to get the data I need without using the <input> tag
+//And for security reasons I can't run any files through it unless the user manually selects them
+//So for now it's  user-submitted audio files 
+fileInput.addEventListener('change', function(e) {
+
+	var test = document.getElementById("defaultSong");
+	console.log(test);
+	console.log(test.files);
 	var reader = new FileReader();
 	reader.onload = function(e) {
+
 	  initSound(this.result);
 	};
 	reader.readAsArrayBuffer(this.files[0]);
 }, false);
 
 
-function createScene()
-{
-	// set the scene size
+function createScene() {
+	//Create variables for all the materials and meshes I need
 	var WIDTH = 800,
-	  HEIGHT = 900;
-
-	// set some camera attributes
-	var VIEW_ANGLE = 50,
-	  ASPECT = WIDTH / HEIGHT,
-	  NEAR = 0.1,
-	  FAR = 10000;
+	  HEIGHT = 800;
 
 	var c = document.getElementById("gameCanvas");
 
-	// create a WebGL renderer, camera
-	// and a scene
 	renderer = new THREE.WebGLRenderer();
-	camera =
-	  new THREE.PerspectiveCamera(
-		VIEW_ANGLE,
-		ASPECT,
-		NEAR,
-		FAR);
+	camera = new THREE.PerspectiveCamera(
+		50,
+		WIDTH / HEIGHT,
+		.1,
+		10000);
 
 	scene = new THREE.Scene();
 
-	// add the camera to the scene
 	scene.add(camera);
-	
-	// set a default position for the camera
-	// not doing this somehow messes up shadow rendering
+
 	camera.position.z = 320;
 	
-	// start the renderer
 	renderer.setSize(WIDTH, HEIGHT);
 
-	// attach the render-supplied DOM element
 	c.appendChild(renderer.domElement);
 
-	// set up the playing surface plane 
+
 	var planeWidth = fieldWidth,
-		planeHeight = fieldHeight,
-		planeQuality = 10;
+		planeHeight = fieldHeight;
 		
-	// create the paddle1's material
-	var paddle1Material =
-	  new THREE.MeshLambertMaterial(
-		{
+
+	var playerMaterial = new THREE.MeshLambertMaterial({
+
 		  color: 0x32CD32
 		});
-	// create the paddle2's material
-	var paddle2Material =
-	  new THREE.MeshLambertMaterial(
-		{
+
+	var turret1Material = new THREE.MeshLambertMaterial({
+
 		  color: 0xFF4045
 		});
-	// create the plane's material	
-	var planeMaterial =
-	  new THREE.MeshLambertMaterial(
-		{
+
+	var floorMaterial = new THREE.MeshLambertMaterial({
+
 		  color: 0x111111
 		});
-	// create the table's material
-	var tableMaterial =
-	  new THREE.MeshLambertMaterial(
-		{
-		  color: 0x800000
-		});
-	// create the pillar's material
-	var pillarMaterial =
-	  new THREE.MeshLambertMaterial(
-		{
+
+	var pillarMaterial = new THREE.MeshLambertMaterial({
+
 		  color: 0x8B0000
 		});
-	var visMaterial = 
-	  new THREE.MeshLambertMaterial(
-	  {
+
+	var visMaterial = new THREE.MeshLambertMaterial( {
+
 	  	color: 0xFF0000,
 	  	transparent: true,
 	  	opacity: .6
 	  });
-	var bacMaterial = 
-	  new THREE.MeshLambertMaterial(
-	  {
+
+	var bacMaterial = new THREE.MeshLambertMaterial({
+
 	  	color: 0x000000
 	  });
-	var healthMaterial = new THREE.MeshLambertMaterial(
-	{
+
+	var healthMaterial = new THREE.MeshLambertMaterial({
+
 		color: 0x00FF00
 	})
-	// create the ground's material
-	var groundMaterial =
-	  new THREE.MeshLambertMaterial(
-		{
+
+	var groundMaterial = new THREE.MeshLambertMaterial({
+
 		  color: 0x888888
 		});
 		
 		
-	// create the playing surface plane
-	var plane = new THREE.Mesh(
 
-	  new THREE.PlaneGeometry(
-		planeWidth * 0.95,	// 95% of table width, since we want to show where the ball goes out-of-bounds
-		planeHeight,
-		planeQuality,
-		planeQuality),
 
-	  planeMaterial);
-	  
-	scene.add(plane);
-	plane.receiveShadow = true;	
 	
-	var table = new THREE.Mesh(
+	var floor = new THREE.Mesh(
 
 	  new THREE.CubeGeometry(
-		planeWidth * 1.05,	// this creates the feel of a billiards table, with a lining
-		planeHeight * 1.03,
-		100,				// an arbitrary depth, the camera can't see much of it anyway
-		planeQuality,
-		planeQuality,
+		planeWidth,	
+		planeHeight,
+		100,				
+		10,
+		10,
 		1),
 
-	  tableMaterial);
-	table.position.z = -51;	// we sink the table into the ground by 50 units. The extra 1 is so the plane can be seen
-	scene.add(table);
-	table.receiveShadow = true;	
+	  floorMaterial);
+	floor.position.z = -51;	
+	scene.add(floor);
+	floor.receiveShadow = true;	
 	
 	var roof = new THREE.Mesh(
 		new THREE.CubeGeometry(
-			planeWidth * 1.5,
-			planeHeight * 1.4,
+			planeWidth,
+			planeHeight,
 			100,
-			planeQuality,
-			planeQuality,
+			10,
+			10,
 			1),
-		planeMaterial);
+		floorMaterial);
 	roof.position.z = 170;
 	scene.add(roof);
-	// // set up the sphere vars
-	// lower 'segment' and 'ring' values will increase performance
-	var radius = 5,
-		segments = 6,
-		rings = 6;
 		
-	// // create the sphere's material
-	var sphereMaterial =
-	  new THREE.MeshLambertMaterial(
-		{
-		  color: 0xD43001
-		});
+	
+	moverWidth = 5;
+	moverHeight = 5;
+	moverDepth = 5;
+
 		
-	// Create a ball with sphere geometry
-	ball = new THREE.Mesh(
-
-	  new THREE.SphereGeometry(
-		radius,
-		segments,
-		rings),
-
-	  sphereMaterial);
-
-	// // add the sphere to the scene
-	//scene.add(ball);
-	
-	ball.position.x = fieldWidth/2;
-	ball.position.y = 0;
-	// set ball above the table surface
-	ball.position.z = radius;
-	ball.receiveShadow = true;
-    ball.castShadow = true;
-	
-	// // set up the paddle vars
-	paddleWidth = 5;
-	paddleHeight = 5;
-	paddleDepth = 5;
-	paddleQuality = 1;
-		
-	paddle1 = new THREE.Mesh(
+	player = new THREE.Mesh(
 
 	  new THREE.CubeGeometry(
-		paddleWidth,
-		paddleHeight,
-		paddleDepth,
-		paddleQuality,
-		paddleQuality,
-		paddleQuality),
+		moverWidth,
+		moverHeight,
+		moverDepth,
+		1,
+		1,
+		1),
 
-	  paddle1Material);
+	  playerMaterial);
 
-	// // add the sphere to the scene
-	scene.add(paddle1);
+	scene.add(player);
 
 	
-	paddle2 = new THREE.Mesh(
+	turret1 = new THREE.Mesh(
 
 	  new THREE.CubeGeometry(
-		paddleWidth,
-		paddleHeight,
-		paddleDepth,
-		paddleQuality,
-		paddleQuality,
-		paddleQuality),
+		moverWidth,
+		moverHeight,
+		moverDepth,
+		1,
+		1,
+		1),
 
-	  paddle2Material);
+	  turret1Material);
 	
-	paddle3 = new THREE.Mesh(
+	turret2 = new THREE.Mesh(
 
 	  new THREE.CubeGeometry(
-		paddleWidth,
-		paddleHeight,
-		paddleDepth,
-		paddleQuality,
-		paddleQuality,
-		paddleQuality),
+		moverWidth,
+		moverHeight,
+		moverDepth,
+		1,
+		1,
+		1),
 
-	  paddle2Material);
+	  turret1Material);
 
-	paddle4 = new THREE.Mesh(
-
-	  new THREE.CubeGeometry(
-		paddleWidth,
-		paddleHeight,
-		paddleDepth,
-		paddleQuality,
-		paddleQuality,
-		paddleQuality),
-
-	  paddle2Material);
-
-	paddle5 = new THREE.Mesh(
+	turret3 = new THREE.Mesh(
 
 	  new THREE.CubeGeometry(
-		paddleWidth,
-		paddleHeight,
-		paddleDepth,
-		paddleQuality,
-		paddleQuality,
-		paddleQuality),
+		moverWidth,
+		moverHeight,
+		moverDepth,
+		1,
+		1,
+		1),
 
-	  paddle2Material);
-	paddle6 = new THREE.Mesh(
+	  turret1Material);
+
+	turret4 = new THREE.Mesh(
+
+	  new THREE.CubeGeometry(
+		moverWidth,
+		moverHeight,
+		moverDepth,
+		1,
+		1,
+		1),
+
+	  turret1Material);
+	turret5 = new THREE.Mesh(
 		new THREE.CubeGeometry(
-			paddleWidth,
-			paddleHeight,
-			paddleDepth,
-			paddleQuality,
-			paddleQuality,
-			paddleQuality),
-		paddle2Material);
+			moverWidth,
+			moverHeight,
+			moverDepth,
+			1,
+			1,
+			1),
+		turret1Material);
 
-	// // add the sphere to the scene
-	scene.add(paddle2);
-	scene.add(paddle3);
-	scene.add(paddle4);
-	scene.add(paddle5);
-	scene.add(paddle6);
+	scene.add(turret1);
+	scene.add(turret2);
+	scene.add(turret3);
+	scene.add(turret4);
+	scene.add(turret5);
 	
-	// set paddles on each side of the table
-	paddle1.position.x = -fieldWidth/2 -paddleWidth;
-	paddle1.position.z = 50;
 
-	paddle2.position.x = fieldWidth/2 - paddleWidth;
-	paddle2.position.y = fieldHeight/2 - paddleHeight;
-	paddle2.position.z = 115;
+	player.position.x = -fieldWidth/2 -moverWidth;
+	player.position.y = 0;
+	player.position.z = 50;
 
-	paddle3.position.x = fieldWidth/2 - paddleWidth;
-	paddle3.position.y = fieldHeight/2 - paddleHeight;
-	paddle3.position.z = paddleDepth;
+	turret1.position.x = fieldWidth/2 - moverWidth;
+	turret1.position.y = fieldHeight/2 - moverHeight;
+	turret1.position.z = 115;
 
-	paddle4.position.x = fieldWidth/2 - paddleWidth;
-	paddle4.position.y = -fieldHeight/2 + paddleHeight;
-	paddle4.position.z = paddleDepth;
+	turret2.position.x = fieldWidth/2 - moverWidth;
+	turret2.position.y = fieldHeight/2 - moverHeight;
+	turret2.position.z = moverDepth;
 
-	paddle5.position.x = fieldWidth/2 - paddleWidth;
-	paddle5.position.y = -fieldHeight/2 + paddleHeight;
-	paddle5.position.z = 115;
+	turret3.position.x = fieldWidth/2 - moverWidth;
+	turret3.position.y = -fieldHeight/2 + moverHeight;
+	turret3.position.z = moverDepth;
+
+	turret4.position.x = fieldWidth/2 - moverWidth;
+	turret4.position.y = -fieldHeight/2 + moverHeight;
+	turret4.position.z = 115;
 	
-	paddle6.position.x = fieldWidth/2 - paddleWidth;
-	paddle6.position.y = fieldHeight/2 - paddleHeight;
-	paddle6.position.z = 0;	
+	turret5.position.x = fieldWidth/2 - moverWidth;
+	turret5.position.y = fieldHeight/2 - moverHeight;
+	turret5.position.z = 0;	
 	
 	
 	
-	paddle2.ydir = 'left';
-	paddle2.zdir = 'up';
-	paddle3.ydir = 'right';
-	paddle3.zdir = 'down';
-	paddle4.ydir = 'right';
-	paddle4.zdir = 'down';
-	paddle5.ydir = 'left';
-	paddle5.zdir = 'up';
-	paddle6.dir = 'right';
+	turret1.ydir = 'left';
+	turret1.zdir = 'up';
+	turret2.ydir = 'right';
+	turret2.zdir = 'down';
+	turret3.ydir = 'right';
+	turret3.zdir = 'down';
+	turret4.ydir = 'left';
+	turret4.zdir = 'up';
+	turret5.dir = 'right';
 
-	paddle1.momentum = 0;
+	player.momentum = 0;
 		
-	// we iterate 10x (5x each side) to create pillars to show off shadows
-	// this is for the pillars on the left
-	// we iterate 10x (5x each side) to create pillars to show off shadows
-	// this is for the pillars on the right
 	var backdrop = new THREE.Mesh(
 
 		  new THREE.CubeGeometry( 
@@ -431,8 +369,8 @@ function createScene()
 	scene.add(backdrop2);
 	
 
-	for(var i = 0; i < 8; i++)
-	{
+	for(var i = 0; i < 8; i++){
+
 		visualiser1.push(new THREE.Mesh(
 			new THREE.CubeGeometry(
 				50,
@@ -448,8 +386,8 @@ function createScene()
 		scene.add(visualiser1[visualiser1.length - 1]);
 	}
 
-	for(var i = 0; i < 8; i++)
-	{
+	for(var i = 0; i < 8; i++){
+
 		visualiser2.push(new THREE.Mesh(
 			new THREE.CubeGeometry(
 				50,
@@ -476,8 +414,6 @@ function createScene()
 	scene.add(backPanel);
 	backPanel.position.x = fieldHeight + 40;
 
-	// finally we finish by adding a ground plane
-	// to show off pretty shadows
 	healthBar = new THREE.Mesh(
 		new THREE.CubeGeometry(
 			22,
@@ -500,54 +436,59 @@ function createScene()
 	  1 ),
 
 	  groundMaterial);
-    // set ground to arbitrary z position to best show off shadowing
 	ground.position.z = -132;
 	ground.receiveShadow = true;	
 	scene.add(ground);		
 		
-	// // create a point light
 	pointLight =
-	  new THREE.PointLight(0xF8D898);
+	  new THREE.PointLight(0xFFFFFF);
 
-	// set its position
-	pointLight.position.x = -50;
+	pointLight.position.x = 0;
 	pointLight.position.y = 0;
 	pointLight.position.z = 50;
-	pointLight.intensity = 2.9;
+	pointLight.intensity = 3;
 	pointLight.distance = 10000;
-	// add to the scene
 	scene.add(pointLight);
 		
-	// add a spot light
-	// this is important for casting shadows
-    spotLight = new THREE.SpotLight(0xF8D898);
+
+    spotLight = new THREE.SpotLight(0xFF0000);
     spotLight.position.set(-200, 0, 460);
     spotLight.intensity = 1.5;
     spotLight.castShadow = true;
     scene.add(spotLight);
 	
-	// MAGIC SHADOW CREATOR DELUXE EDITION with Lights PackTM DLC
 	renderer.shadowMapEnabled = true;		
 }
 
-function draw()
-{	
-	// draw THREE.JS scene
+//Main draw function
+function draw(){	
+
+	//Set the speed of projectiles to the value from the form
 	var temp = document.getElementById('difficulty');
 	difficulty = temp.value;
+	//Stuff you need to do as general upkeep
 	renderer.render(scene, camera);
-	// loop draw function call
 	requestAnimationFrame(draw);
 	analyser.getByteFrequencyData(dataArray);
+	cameraTracking();
 
-	paddlePhysics();
-	cameraPhysics();
-
-
+	//For storing the values I pull from the frequency data
 	var ave1 = 0;
 	var ave2 = 0;
 	var ave3 = 0;
 	var ave4 = 0;
+
+	//To reset the spotlight after a collision
+	if(spotLight.intensity > 1.5 && healthBar.scale.y > .1){
+
+		spotLight.intensity -= .4;
+	}
+	if(spotLight.intensity < 1.5){
+
+		spotLight.intensity = 1.5;
+	}
+
+	//Add up and average the frequency data for the four quadrants
 	for(var i = 0; i < bufferLength; i++){
 		if(i >= 0 && i < bufferLength/4)
 			ave1 += dataArray[i];
@@ -562,6 +503,9 @@ function draw()
 	ave2 /= bufferLength/4;
 	ave3 /= bufferLength/4;
 	ave4 /= bufferLength/4;
+
+
+	//Check for peaks for proper beat-detection
 	if(ave1 > beatPeaks[0])
 		beatPeaks[0] = ave1;
 	if(ave2 > beatPeaks[1])
@@ -571,8 +515,9 @@ function draw()
 	if(ave4 > beatPeaks[3])
 		beatPeaks[3] = ave4;
 
-	if(beatDetect1.length === 40)
-	{
+	//We only store the most recent data for purposes of beat detection, so if we're at the length, cycle the oldest one out
+	if(beatDetect1.length === 40){
+
 		beatDetect1.pop();
 		beatDetect1.push(ave1);
 		beatDetect2.pop();
@@ -582,15 +527,18 @@ function draw()
 		beatDetect4.pop();
 		beatDetect4.push(ave4);
 	}
-	else
-	{
+	else{
+
 		beatDetect1.push(ave1);
 		beatDetect2.push(ave2);
 		beatDetect3.push(ave3);
 		beatDetect4.push(ave4);
 	}
-	for(var i = 0; i < beatDetect1.length; i++)
-	{
+
+
+	//We now collect the averages of the past 40 averages to set a baseline for beat detection
+	for(var i = 0; i < beatDetect1.length; i++){
+
 		beatAverages[0] += beatDetect1[i];
 		beatAverages[1] += beatDetect2[i];
 		beatAverages[2] += beatDetect3[i];
@@ -600,304 +548,285 @@ function draw()
 	beatAverages[1] /= beatDetect2.length;
 	beatAverages[2] /= beatDetect3.length;
 	beatAverages[3] /= beatDetect4.length;
+
+
+	//Used to control forced time between shots, every frame is just a little too much, so I use this to alternate
 	var stc = 1;
-	if(paddle2.ydir === 'right')
-	{
-		paddle2.position.y += (ave1 / 60);
+
+	//Moving, checking position, and checking if it needs to fire for all four turrets
+	if(turret1.ydir === 'right'){
+
+		turret1.position.y += (ave1 / 60);
 	}
-	else
-	{
-		paddle2.position.y -= (ave1 / 60);
+	else{
+
+		turret1.position.y -= (ave1 / 60);
 	}
-	if(paddle2.zdir === 'up')
-	{
-		paddle2.position.z += (ave3 / 60);
+	if(turret1.zdir === 'up'){
+
+		turret1.position.z += (ave3 / 60);
 	}
-	else
-	{
-		paddle2.position.z -= (ave3 / 60);
+	else{
+
+		turret1.position.z -= (ave3 / 60);
 	}
-	if(paddle2.position.y >= fieldHeight/2 && paddle2.ydir === 'right')
-	{
-		paddle2.position.y = fieldHeight/2;
-		paddle2.ydir = 'left';
+	if(turret1.position.y >= fieldHeight/2 && turret1.ydir === 'right'){
+
+		turret1.position.y = fieldHeight/2;
+		turret1.ydir = 'left';
 	}
-	else if(paddle2.position.y <= -fieldHeight/2 && paddle2.ydir === 'left')
-	{
-		paddle2.position.y = -fieldHeight/2;
-		paddle2.ydir = 'right';
+	else if(turret1.position.y <= -fieldHeight/2 && turret1.ydir === 'left'){
+
+		turret1.position.y = -fieldHeight/2;
+		turret1.ydir = 'right';
 	}
-	if(paddle2.position.z >= 115 && paddle2.zdir === 'up')
-	{
-		paddle2.position.z = 115;
-		paddle2.zdir = 'down';
+	if(turret1.position.z >= 115 && turret1.zdir === 'up'){
+
+		turret1.position.z = 115;
+		turret1.zdir = 'down';
 	}
-	else if(paddle2.position.z <= 5 && paddle2.zdir === 'down')
-	{
-		paddle2.position.z = 5;
-		paddle2.zdir = 'up';
+	else if(turret1.position.z <= 5 && turret1.zdir === 'down'){
+
+		turret1.position.z = 5;
+		turret1.zdir = 'up';
 	}
-	if(timer[0] > 0)
-	{
-		timer[0]--;
+	if(timer[3] > 0){
+
+		timer[3]--;
 	}
-	else if(ave1 > (((beatPeaks[0] - beatAverages[0])/2) + beatAverages[0]) * 1.8 && ave1 > 80)
-	{
-		spawnBallCenter(difficulty, paddle2.position.y, paddle2.position.z);
-		timer[0] = stc * 2;
+	//So we take the peak, and the average, and then get .8 of the difference, and add it onto the average. If the current frequency value surpasses that, and is above a minimum threshold, we spawn a shot
+	else if(ave1 > (((beatPeaks[0] - beatAverages[0])/2) + beatAverages[0]) * 1.8 && ave1 > 80){
+
+		spawnBallCenter(difficulty, turret1.position.y, turret1.position.z);
+
+		timer[3] = stc;
 	}
 	
 
 
-	if(paddle3.ydir === 'right')
-	{
-		paddle3.position.y += (ave1 / 60);
+	if(turret2.ydir === 'right'){
+
+		turret2.position.y += (ave1 / 60);
 	}
-	else
-	{
-		paddle3.position.y -= (ave1 / 60);
+	else{
+
+		turret2.position.y -= (ave1 / 60);
 	}
-	if(paddle3.zdir === 'up')
-	{
-		paddle3.position.z += (ave3 / 60);
+	if(turret2.zdir === 'up'){
+
+		turret2.position.z += (ave3 / 60);
 	}
-	else
-	{
-		paddle3.position.z -= (ave3 / 60);
+	else{
+
+		turret2.position.z -= (ave3 / 60);
 	}
-	if(paddle3.position.y >= fieldHeight/2 && paddle3.ydir === 'right')
-	{
-		paddle3.position.y = fieldHeight/2;
-		paddle3.ydir = 'left';
+	if(turret2.position.y >= fieldHeight/2 && turret2.ydir === 'right'){
+
+		turret2.position.y = fieldHeight/2;
+		turret2.ydir = 'left';
 	}
-	else if(paddle3.position.y <= -fieldHeight/2 && paddle3.ydir === 'left')
-	{
-		paddle3.position.y = -fieldHeight/2;
-		paddle3.ydir = 'right';
+	else if(turret2.position.y <= -fieldHeight/2 && turret2.ydir === 'left'){
+
+		turret2.position.y = -fieldHeight/2;
+		turret2.ydir = 'right';
 	}
-	if(paddle3.position.z >= 115 && paddle3.zdir === 'up')
-	{
-		paddle3.position.z = 115;
-		paddle3.zdir = 'down';
+	if(turret2.position.z >= 115 && turret2.zdir === 'up'){
+
+		turret2.position.z = 115;
+		turret2.zdir = 'down';
 	}
-	else if(paddle3.position.z <= 5 && paddle3.zdir === 'down')
-	{
-		paddle3.position.z = 5;
-		paddle3.zdir = 'up';
+	else if(turret2.position.z <= 5 && turret2.zdir === 'down'){
+
+		turret2.position.z = 5;
+		turret2.zdir = 'up';
 	}
-	if(timer[0] > 0)
-	{
+	if(timer[2] > 0){
+
+		timer[2]--;
+	}
+	else if(ave1 > (((beatPeaks[0] - beatAverages[0])/2) + beatAverages[0]) * 1.8 && ave1 > 80){
+
+		spawnBallCenter(difficulty, turret2.position.y, turret2.position.z);
+		timer[2] = stc;
+	}
+
+
+
+	if(turret3.ydir === 'right'){
+
+		turret3.position.y += (ave2 / 60);
+	}
+	else{
+
+		turret3.position.y -= (ave2 / 60);
+	}
+	if(turret3.zdir === 'up'){
+
+		turret3.position.z += (ave4 / 60);
+	}
+	else{
+
+		turret3.position.z -= (ave4 / 60);
+	}
+	if(turret3.position.y >= fieldHeight/2 && turret3.ydir === 'right'){
+
+		turret3.position.y = fieldHeight/2;
+		turret3.ydir = 'left';
+
+	}
+	else if(turret3.position.y <= -fieldHeight/2 && turret3.ydir === 'left'){
+
+		turret3.position.y = -fieldHeight/2;
+		turret3.ydir = 'right';
+	}
+	if(turret3.position.z >= 115 && turret3.zdir === 'up'){
+
+		turret3.position.z = 115;
+		turret3.zdir = 'down';
+	}
+	else if(turret3.position.z <= 5 && turret3.zdir === 'down'){
+
+		turret3.position.z = 5;
+		turret3.zdir = 'up';
+	}
+	if(timer[0] > 0){
+
 		timer[0]--;
 	}
-	else if(ave1 > (((beatPeaks[0] - beatAverages[0])/2) + beatAverages[0]) * 1.8 && ave1 > 80)
-	{
-		spawnBallCenter(difficulty, paddle3.position.y, paddle3.position.z);
-		timer[0] = stc * 2;
+	else if(ave2 > (((beatPeaks[1] - beatAverages[1])/2)+ beatAverages[1]) * 1.8 && ave2 > 80){
+
+		spawnBallCenter(difficulty, turret3.position.y, turret3.position.z);
+		timer[0] = stc;
 	}
 
 
 
-	if(paddle4.ydir === 'right')
-	{
-		paddle4.position.y += (ave2 / 60);
-	}
-	else
-	{
-		paddle4.position.y -= (ave2 / 60);
-	}
-	if(paddle4.zdir === 'up')
-	{
-		paddle4.position.z += (ave4 / 60);
-	}
-	else
-	{
-		paddle4.position.z -= (ave4 / 60);
-	}
-	if(paddle4.position.y >= fieldHeight/2 && paddle4.ydir === 'right')
-	{
-		paddle4.position.y = fieldHeight/2;
-		paddle4.ydir = 'left';
 
+	if(turret4.position.y >= fieldHeight/2 && turret4.ydir === 'right'){
+
+		turret4.position.y = fieldHeight/2;
+		turret4.ydir = 'left';
 	}
-	else if(paddle4.position.y <= -fieldHeight/2 && paddle4.ydir === 'left')
-	{
-		paddle4.position.y = -fieldHeight/2;
-		paddle4.ydir = 'right';
+	else if(turret4.position.y <= -fieldHeight/2 && turret4.ydir === 'left'){
+
+		turret4.position.y = -fieldHeight/2;
+		turret4.ydir = 'right';
 	}
-	if(paddle4.position.z >= 115 && paddle4.zdir === 'up')
-	{
-		paddle4.position.z = 115;
-		paddle4.zdir = 'down';
+	if(turret4.position.z >= 115 && turret4.zdir === 'up'){
+
+		turret4.position.z = 115;
+		turret4.zdir = 'down';
 	}
-	else if(paddle4.position.z <= 5 && paddle4.zdir === 'down')
-	{
-		paddle4.position.z = 5;
-		paddle4.zdir = 'up';
+	else if(turret4.position.z <= 5 && turret4.zdir === 'down'){
+
+		turret4.position.z = 5;
+		turret4.zdir = 'up';
 	}
-	if(timer[1] > 0)
-	{
+	if(turret4.ydir === 'right'){
+
+		turret4.position.y += (ave2 / 60);
+	}
+	else{
+
+		turret4.position.y -= (ave2 / 60);
+	}
+	if(turret4.zdir === 'up'){
+
+		turret4.position.z += (ave4 / 60);
+	}
+	else{
+
+		turret4.position.z -= (ave4 / 60);
+	}
+	if(timer[1] > 0){
+
 		timer[1]--;
 	}
-	else if(ave2 > (((beatPeaks[1] - beatAverages[1])/2)+ beatAverages[1]) * 1.8 && ave2 > 80)
-	{
-		spawnBallCenter(difficulty, paddle4.position.y, paddle4.position.z);
-		timer[1] = stc* 2;
+	else if(ave2 > (((beatPeaks[1] - beatAverages[1])/2)+ beatAverages[1]) * 1.8 && ave2 > 80){
+
+		spawnBallCenter(difficulty, turret4.position.y, turret4.position.z);
+		timer[1] = stc;
 	}
 
 
-
-
-	if(paddle5.position.y >= fieldHeight/2 && paddle5.ydir === 'right')
-	{
-		paddle5.position.y = fieldHeight/2;
-		paddle5.ydir = 'left';
-	}
-	else if(paddle5.position.y <= -fieldHeight/2 && paddle5.ydir === 'left')
-	{
-		paddle5.position.y = -fieldHeight/2;
-		paddle5.ydir = 'right';
-	}
-	if(paddle5.position.z >= 115 && paddle5.zdir === 'up')
-	{
-		paddle5.position.z = 115;
-		paddle5.zdir = 'down';
-	}
-	else if(paddle5.position.z <= 5 && paddle5.zdir === 'down')
-	{
-		paddle5.position.z = 5;
-		paddle5.zdir = 'up';
-	}
-	if(paddle5.ydir === 'right')
-	{
-		paddle5.position.y += (ave2 / 60);
-	}
-	else
-	{
-		paddle5.position.y -= (ave2 / 60);
-	}
-	if(paddle5.zdir === 'up')
-	{
-		paddle5.position.z += (ave4 / 60);
-	}
-	else
-	{
-		paddle5.position.z -= (ave4 / 60);
-	}
-	if(timer[1] > 0)
-	{
-		timer[1]--;
-	}
-	else if(ave2 > (((beatPeaks[1] - beatAverages[1])/2)+ beatAverages[1]) * 1.8 && ave2 > 80)
-	{
-		spawnBallCenter(difficulty, paddle5.position.y, paddle5.position.z);
-		timer[1] = stc * 2;
-	}
+	//We want beatPeaks to slowly degrade over time so if the overall noise of the song drops early highs don't obfuscate beats later on at lower levels
 	beatPeaks[0] -= .5;
 	beatPeaks[1] -= .5;
 	beatPeaks[2] -= .5;
 	beatPeaks[3] -= .5;
-	for(var i = 0; i < 8; i++)
-	{
+
+	//For the visualisers (which are now kinda hidden by the wall shots, I should move them somewhere)
+	for(var i = 0; i < 8; i++){
+
 		visualiser1[i].position.z = -150 + dataArray[i * 16]/3;
 	}
-	for(var i = 0; i < 8; i++)
-	{
+	for(var i = 0; i < 8; i++){
+
 		visualiser2[i].position.z = -150 + dataArray[i * 16]/3;
 	}
 
+	//Controls for the turret that spawns the obstacles lining the wall, isn't modified by the music, and just exists to make it seem like the player is flying forward (and encourage them to avoid hugging walls)
+	if(turret5.dir === 'right'){
 
-	if(paddle6.dir === 'right')
-	{
-		paddle6.position.y += 50;
-		if(paddle6.position.y >= fieldHeight/2)
-		{
-			paddle6.position.y = fieldHeight/2;
-			paddle6.dir = 'up';
+		turret5.position.y += 50;
+		if(turret5.position.y >= fieldHeight/2){
+
+			turret5.position.y = fieldHeight/2;
+			turret5.dir = 'up';
 		}
 	}
-	else if(paddle6.dir === 'up')
-	{
-		paddle6.position.z += 50;
-		if(paddle6.position.z >= 120)
-		{
-			paddle6.position.z = 120;
-			paddle6.dir = 'left';
+	else if(turret5.dir === 'up'){
+
+		turret5.position.z += 50;
+		if(turret5.position.z >= 120){
+
+			turret5.position.z = 120;
+			turret5.dir = 'left';
 		}
 	}
-	else if(paddle6.dir === 'left')
-	{
-		paddle6.position.y -= 50;
-		if(paddle6.position.y <= -fieldHeight/2)
-		{
-			paddle6.position.y = -fieldHeight/2;
-			paddle6.dir = 'down';
+	else if(turret5.dir === 'left'){
+
+		turret5.position.y -= 50;
+		if(turret5.position.y <= -fieldHeight/2){
+
+			turret5.position.y = -fieldHeight/2;
+			turret5.dir = 'down';
 		}
 	}
-	else if(paddle6.dir === 'down')
-	{
-		paddle6.position.z -= 50;
-		if(paddle6.position.z <= 0)
-		{
-			paddle6.position.z = 0;
-			paddle6.dir = 'right';
+	else if(turret5.dir === 'down'){
+
+		turret5.position.z -= 50;
+		if(turret5.position.z <= 0){
+
+			turret5.position.z = 0;
+			turret5.dir = 'right';
 		}
 	}
-	spawnBallWall(difficulty, paddle6.position.y, paddle6.position.z);
-	/*if(timer < 2)
-	{
-		timer++;
-	}
-	else
-	{
-		for(var i = 0; i < bufferLength; i++){
-			if(i === 0)
-			{
-				if(dataArray[i]/2 > 75)
-				{
-					//spawnBallRight(dataArray[i]/2);
-				}
-			}
-			else if(i === 49)
-			{
-				if(dataArray[i]/2 > 75)
-				{
-					spawnBallCenter(dataArray[i]/2);
-				}
-			}
-			else if(i === 99)
-			{
-				if(dataArray[i]/2 > 75)
-				{
-					//spawnBallLeft(dataArray[i]/2);
-				}
-			}
-			else
-			{
-				//idk, cry I guess
-			}
-		}
-		timer = 0;
-	}*/
+	//Spawn the wall obstacles
+	spawnBallWall(difficulty, turret5.position.y, turret5.position.z);
 	
-	
-	for(i = 0; i < shots.length; i++)
-	{
+	//Move all the shots
+	for(i = 0; i < shots.length; i++){
+
 		moveShot(shots[i]);
 	}
+	//Potentially seven shots can spawn every other frame, so we call this four times each frame to ensure we don't slowly overload on meshes and objects
 	poppable(shots[0]);
 	poppable(shots[0]);
 	poppable(shots[0]);
 	poppable(shots[0]);
-	playerPaddleMovement();
+	if(healthBar.scale.y >= .1)
+		playerMovement();
 
 }
 
-function poppable(shot)
-{
-	if(shot)
-	{
-		if (shot.mesh.position.x <= -fieldHeight/2 - 140)
-		{
+function poppable(shot){
+
+	//Checks the oldest-living shots to see if they've exited the area of relevance, if they have, remove anything that might need memory and remove them from the list
+	if(shot){
+
+		if (shot.mesh.position.x <= -fieldHeight/2 - 140){
+
 			shots.shift();
 			scene.remove(shot.mesh);
 			shot.mesh.geometry.dispose();
@@ -909,102 +838,73 @@ function poppable(shot)
 			shot = undefined;
 		}
 	}
-	else
-	{
+	else{
+
+		//Incase a mysterious invalid shot ends up the list, or we accidentally check a slot that's already gone
 		shots.shift();
 	}
 }
 
-function moveShot(shot)
-{
+function moveShot(shot){
+
+	//If it exists, move it, and check if it's collided with the player.
+	//Wallshots have different dimensions and thus need to be checked differently
 	if(shot){
 		shot.mesh.position.x += shot.xspd;
 		shot.mesh.position.y += shot.yspd;
-		if(shot.path === 'center')
-		{
-			if (shot.mesh.position.y <= -fieldHeight/2)
-			{
-				shot.yspd *= -1;
-			}	
-			// if ball goes off the bottom side (side of table)
-			if (shot.mesh.position.y >= fieldHeight/2)
-			{
-				shot.yspd *= -1;
-			}
-		}
-		if(shot.path === 'left')
-		{
-			if(shot.mesh.zdir === 'up')
-			{
-				shot.mesh.position.z += (40 - shot.mesh.position.z) * .1;
-				if(shot.mesh.position.z >= 38)
-				{
-					shot.mesh.zdir = 'down';
-				}
-			}
-			else
-			{
-				shot.mesh.position.z -= (shot.mesh.position.z - 5) * .1;
-				if(shot.mesh.position.z <= 6)
-				{
-					shot.mesh.zdir = 'up';
-				}
-			}
-			if (shot.mesh.position.y <= -fieldHeight/2)
-			{
-				shot.yspd *= -1;
-			}	
-			// if ball goes off the bottom side (side of table)
-			if (shot.mesh.position.y >= fieldHeight/2)
-			{
-				shot.yspd *= -1;
-			}
-		}
+
 		if(shot.path === 'center'){
-			if (paddle1.position.x <= shot.mesh.position.x + 5
-			&& paddle1.position.x >= shot.mesh.position.x - 5)
-			{
-				if (paddle1.position.y <= shot.mesh.position.y + 5
-				&& paddle1.position.y >= shot.mesh.position.y - 5)
-				{
-					if(paddle1.position.z <= shot.mesh.position.z + 5
-					&& paddle1.position.z >= shot.mesh.position.z - 5)
-					{
-						if(healthBar.scale.y > 0)
-						{
-							healthBar.scale.y -= .1;
-							healthBar.material.color.g = healthBar.material.color.g - .1;
-							healthBar.material.color.r = healthBar.material.color.r + .1;
-						}
-						if(healthBar.scale.y < .1)
-						{
-							stopSound();
+			if (player.position.x <= shot.mesh.position.x + 5
+			&& player.position.x >= shot.mesh.position.x - 5){
+
+				if (player.position.y <= shot.mesh.position.y + 5
+				&& player.position.y >= shot.mesh.position.y - 5){
+
+					if(player.position.z <= shot.mesh.position.z + 5
+					&& player.position.z >= shot.mesh.position.z - 5){
+
+						if(spotLight.intensity === 1.5){
+							spotLight.intensity = 15.5;
+							if(healthBar.scale.y > 0){
+
+								healthBar.scale.y -= .1;
+								healthBar.material.color.g = healthBar.material.color.g - .1;
+								healthBar.material.color.r = healthBar.material.color.r + .1;
+							}
+							if(healthBar.scale.y < .1){
+
+								//If we're dead end the game
+								stopSound();
+							}
 						}
 					}
 
 				}
 			}
 		}
-		else
-		{
-			if (paddle1.position.x <= shot.mesh.position.x + 15
-			&& paddle1.position.x >= shot.mesh.position.x - 15)
-			{
-				if (paddle1.position.y <= shot.mesh.position.y + 5
-				&& paddle1.position.y >= shot.mesh.position.y - 5)
-				{
-					if(paddle1.position.z <= shot.mesh.position.z + 25
-					&& paddle1.position.z >= shot.mesh.position.z - 25)
-					{
-						if(healthBar.scale.y > 0)
-						{
-							healthBar.scale.y -= .1;
-							healthBar.material.color.g = healthBar.material.color.g - .1;
-							healthBar.material.color.r = healthBar.material.color.r + .1;
-						}
-						if(healthBar.scale.y < .1)
-						{
-							stopSound();
+		else{
+
+			if (player.position.x <= shot.mesh.position.x + 15
+			&& player.position.x >= shot.mesh.position.x - 15){
+
+				if (player.position.y <= shot.mesh.position.y + 5
+				&& player.position.y >= shot.mesh.position.y - 5){
+
+					if(player.position.z <= shot.mesh.position.z + 25
+					&& player.position.z >= shot.mesh.position.z - 25){
+
+						if(spotLight.intensity === 1.5){
+							spotLight.intensity = 15.5;
+							if(healthBar.scale.y > 0){
+
+								healthBar.scale.y -= .1;
+								healthBar.material.color.g = healthBar.material.color.g - .1;
+								healthBar.material.color.r = healthBar.material.color.r + .1;
+							}
+							if(healthBar.scale.y < .1){
+
+								stopSound();
+							}
 						}
 					}
 
@@ -1015,8 +915,9 @@ function moveShot(shot)
 
 }
 
-function spawnBallCenter(speed, ypos, zpos)
-{
+//Spawn the square shots that line up with the turrets
+function spawnBallCenter(speed, ypos, zpos){
+
 		var rand = Math.random();
 		rand = rand - .5;
 		shot = { mesh:new THREE.Mesh(
@@ -1029,27 +930,25 @@ function spawnBallCenter(speed, ypos, zpos)
 		1,
 		1),
 	  	
-	  	new THREE.MeshLambertMaterial(
-		{
+	  	new THREE.MeshLambertMaterial({
+
 		  color: 0xD43001
 		})), xspd: -difficulty, yspd: 0, path: 'center'}
 
-		// // add the sphere to the scene
 		shots.push(shot);
 		scene.add(shot.mesh);
 		
 		shot.mesh.position.x = fieldWidth/2;
 		shot.mesh.position.y = ypos;
-		// set ball above the table surface
 		shot.mesh.position.z = zpos;
-		//shot.mesh.receiveShadow = true;
-	    //shot.mesh.castShadow = true;
 }
-function spawnBallWall(speed, ypos, zpos)
-{
+
+//spawn the wall obstacles
+function spawnBallWall(speed, ypos, zpos){
+
 	var rand = Math.random();
 	shot = { mesh:new THREE.Mesh(
-
+		//We want them to be longer on the side to look like pillars, so they eat into the wall better and look like full protrusions in the floor and ceiling
 	  	new THREE.CubeGeometry(
 		30,
 		10,
@@ -1058,8 +957,8 @@ function spawnBallWall(speed, ypos, zpos)
 		1,
 		1),
 	  	
-	  	new THREE.MeshLambertMaterial(
-		{
+	  	new THREE.MeshLambertMaterial({
+
 		  color: 0xD43001
 		})), xspd: -difficulty, yspd: 0, path: 'wall'}
 		shots.push(shot);
@@ -1067,78 +966,70 @@ function spawnBallWall(speed, ypos, zpos)
 		
 		shot.mesh.position.x = fieldWidth/2;
 		shot.mesh.position.y = ypos;
-		// set ball above the table surface
 		shot.mesh.position.z = zpos;
 }
 
 
+//Player movement and bounds checking
+function playerMovement(){
 
-// Handles player's paddle movement
-function playerPaddleMovement()
-{
-	// move left
-	if (Key.isDown(Key.A))		
-	{
-		// if paddle is not touching the side of table
-		// we move
-		if (paddle1.position.y >= fieldHeight /2 - 5)
-		{
+	if (Key.isDown(Key.A)){
+
+		if (player.position.y >= fieldHeight /2 - 5){
+
 		}
-		// else we don't move and stretch the paddle
-		// to indicate we can't move
-		else
-		{
-			paddle1.position.y += paddleSpeed;
-			if(paddle1.rotation.z < .5)
-				paddle1.rotation.z += .1;
+		else{
+
+			player.position.y += moverSpeed;
+			if(player.rotation.z < .5)
+				player.rotation.z += .1;
 		}
 	}
-	// move right
-	if (Key.isDown(Key.D))
-	{
-		if (paddle1.position.y <= -fieldHeight/2 + 5)
-		{
+	if (Key.isDown(Key.D)){
+
+		if (player.position.y <= -fieldHeight/2 + 5){
+
 			
 		}
-		else
-		{
-			paddle1.position.y -= paddleSpeed;
-			if(paddle1.rotation.z > -.5)
-				paddle1.rotation.z += -.1;
+		else{
+
+			player.position.y -= moverSpeed;
+			if(player.rotation.z > -.5)
+				player.rotation.z += -.1;
 		}
 	}
-	if (Key.isDown(Key.S))
-	{
-		if(paddle1.position.z <= 5)
-		{
-		}
-		else
-		{
-			paddle1.position.z -= paddleSpeed;
-			if(paddle1.rotation.y < .5)
-				paddle1.rotation.y += .1;
-		}
-	}
-	if (Key.isDown(Key.W))
-	{	
-		if(paddle1.position.z >= 100)
-		{
+	if (Key.isDown(Key.S)){
+
+		if(player.position.z <= 5){
 
 		}
-		else
-		{
-			paddle1.position.z += paddleSpeed;
-			if(paddle1.rotation.y > -.5)
-				paddle1.rotation.y -= .1;
+		else{
+
+			player.position.z -= moverSpeed;
+			if(player.rotation.y < .5)
+				player.rotation.y += .1;
+		}
+	}
+	if (Key.isDown(Key.W)){	
+
+		if(player.position.z >= 100){
+
+
+		}
+		else{
+
+			player.position.z += moverSpeed;
+			if(player.rotation.y > -.5)
+				player.rotation.y -= .1;
 		}
 	}
 	if(!Key.isDown(Key.A)){
 		if(!Key.isDown(Key.D)){
 			if(!Key.isDown(Key.S)){
-				if(!Key.isDown(Key.W))
-				{
-					paddle1.rotation.z = 0;
-					paddle1.rotation.y = 0;
+				if(!Key.isDown(Key.W)){
+
+					player.rotation.z = 0;
+					player.rotation.y = 0;
 					
 				}
 			}
@@ -1147,32 +1038,18 @@ function playerPaddleMovement()
 
 }
 
-// Handles camera and lighting logic
-function cameraPhysics()
-{
-	// we can easily notice shadows if we dynamically move lights during the game
-	//spotLight.position.x = ball.position.x * 2;
-	//spotLight.position.y = ball.position.y * 2;
-	
-	// move to behind the player's paddle
-	camera.position.x = paddle1.position.x - 100;
-	camera.position.y = paddle1.position.y;// * 0.05;
-	camera.position.z = paddle1.position.z + 15;// + 0.04 * (paddle1.position.x);
-	//camera.position.z = 5 + 100 + .04 * (paddle1.position.x);
-	
-	// rotate to face towards the opponent
-	//camera.rotation.x = -0.01 * (ball.position.y) * Math.PI/180;
+//Just sets the camera's position so that it follows the player slightly above their Z-axis (to help give the illusion of speed and help give the sense of depth)
+function cameraTracking(){
+
+	camera.position.x = player.position.x - 100;
+	camera.position.y = player.position.y;
+	camera.position.z = player.position.z + 15;
+
 	camera.rotation.y = -90 * Math.PI/180;
 	camera.rotation.z = -90 * Math.PI/180;
 }
 
-// Handles paddle collision logic
-function paddlePhysics()
-{
 
-	
-	
-}
 
 
 
