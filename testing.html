@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<!-- Author: Eric Bidelman (ericbidelman@chromium.org) -->
+<html>
+<head>
+  <meta charset="utf-8" />
+  <meta http-equiv="X-UA-Compatible" content="chrome=1" />
+  <title>Web Audio API: Simple load + play</title>
+</head>
+<canvas id="tutorial" width="1000" height="1000"></canvas>
+<body>
+  <p>Example of using the Web Audio API to load a sound file
+  and start playing on user-click.</p>
+  <input type="file" accept="audio/*">
+  <button onclick="playSound()" disabled>Start</button>
+  <button onclick="stopSound()" disabled>Stop</button>
+<script>
+var HEIGHT = 1000;
+var WIDTH = 1000;
+var canvas = document.getElementById('tutorial');
+var context = new (window.AudioContext || window.webkitAudioContext)();
+var canvasCtx = canvas.getContext('2d');
+var analyser = context.createAnalyser();
+var source = null;
+var audioBuffer = null;
+analyser.fftSize = 32;
+var bufferLength = analyser.frequencyBinCount;
+var dataArray = new Uint8Array(bufferLength);
+canvasCtx.clearRect(0, 0, WIDTH, HEIGHT);
+console.log(bufferLength);
+draw();
+
+function stopSound() {
+  if (source) {
+    source.stop(0);
+  }
+}
+
+function playSound() {
+  // source is global so we can call .noteOff() later.
+  source = context.createBufferSource();
+  source.buffer = audioBuffer;
+  source.loop = false;
+  source.connect(analyser);
+  analyser.connect(context.destination);
+  source.start(1); // Play immediately.
+}
+
+function initSound(arrayBuffer) {
+  context.decodeAudioData(arrayBuffer, function(buffer) {
+    // audioBuffer is global to reuse the decoded audio later.
+    audioBuffer = buffer;
+    var buttons = document.querySelectorAll('button');
+    buttons[0].disabled = false;
+    buttons[1].disabled = false;
+  }, function(e) {
+    console.log('Error decoding file', e);
+  }); 
+}
+
+// User selects file, read it as an ArrayBuffer and pass to the API.
+var fileInput = document.querySelector('input[type="file"]');
+fileInput.addEventListener('change', function(e) {  
+  var reader = new FileReader();
+  reader.onload = function(e) {
+    initSound(this.result);
+  };
+  reader.readAsArrayBuffer(this.files[0]);
+}, false);
+
+// Load file from a URL as an ArrayBuffer.
+// Example: loading via xhr2: loadSoundFile('sounds/test.mp3');
+
+
+
+function draw(){
+  drawVisual = requestAnimationFrame(draw);
+  analyser.getByteFrequencyData(dataArray);
+  canvasCtx.fillStyle = 'rgb(0, 0, 0)';
+  canvasCtx.fillRect(0, 0, WIDTH, HEIGHT);
+
+
+  var barWidth = (WIDTH / bufferLength);
+  var barHeight;
+  var x = 0;
+
+
+  for(var i = 0; i < bufferLength; i++) {
+        barHeight = dataArray[i]/2;
+
+        canvasCtx.fillStyle = 'rgb(' + (barHeight+100) + ',50,50)';
+        canvasCtx.fillRect(x,HEIGHT-barHeight/2,barWidth,barHeight);
+
+        x += barWidth + 1;
+      }
+}
+
+
+</script>
+</body>
+</html>
