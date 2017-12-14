@@ -464,6 +464,14 @@ function draw(){
 	//Set the speed of projectiles to the value from the form
 	var temp = document.getElementById('difficulty');
 	difficulty = temp.value;
+	if(difficulty < 5)
+	{
+		difficulty = 5;
+	}
+	else if(difficulty > 10)
+	{
+		difficulty = 10;
+	}
 	//Stuff you need to do as general upkeep
 	renderer.render(scene, camera);
 	requestAnimationFrame(draw);
