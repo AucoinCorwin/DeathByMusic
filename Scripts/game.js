@@ -96,8 +96,6 @@ function initSound(arrayBuffer) {
 fileInput.addEventListener('change', function(e) {
 
 	var test = document.getElementById("defaultSong");
-	console.log(test);
-	console.log(test.files);
 	var reader = new FileReader();
 	reader.onload = function(e) {
 
@@ -185,7 +183,7 @@ function createScene() {
 	var floor = new THREE.Mesh(
 
 	  new THREE.CubeGeometry(
-		planeWidth,	
+		planeWidth + 100,	
 		planeHeight,
 		100,				
 		10,
@@ -199,7 +197,7 @@ function createScene() {
 	
 	var roof = new THREE.Mesh(
 		new THREE.CubeGeometry(
-			planeWidth,
+			planeWidth + 100,
 			planeHeight,
 			100,
 			10,
@@ -466,6 +464,14 @@ function draw(){
 	//Set the speed of projectiles to the value from the form
 	var temp = document.getElementById('difficulty');
 	difficulty = temp.value;
+	if(difficulty < 5)
+	{
+		difficulty = 5;
+	}
+	else if(difficulty > 10)
+	{
+		difficulty = 10;
+	}
 	//Stuff you need to do as general upkeep
 	renderer.render(scene, camera);
 	requestAnimationFrame(draw);
