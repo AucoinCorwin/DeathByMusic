@@ -96,8 +96,6 @@ function initSound(arrayBuffer) {
 fileInput.addEventListener('change', function(e) {
 
 	var test = document.getElementById("defaultSong");
-	console.log(test);
-	console.log(test.files);
 	var reader = new FileReader();
 	reader.onload = function(e) {
 
@@ -185,7 +183,7 @@ function createScene() {
 	var floor = new THREE.Mesh(
 
 	  new THREE.CubeGeometry(
-		planeWidth,	
+		planeWidth + 100,	
 		planeHeight,
 		100,				
 		10,
@@ -199,7 +197,7 @@ function createScene() {
 	
 	var roof = new THREE.Mesh(
 		new THREE.CubeGeometry(
-			planeWidth,
+			planeWidth + 100,
 			planeHeight,
 			100,
 			10,
