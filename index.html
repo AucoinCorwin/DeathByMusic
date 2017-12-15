@@ -28,17 +28,20 @@
 		</style>
 	</head>
 	<body onload='setup();'>
+		Choose a .mp3 or .wav file to use:
 		<input type="file" accept="audio/*">
 		<div></div>
+		Once song has loaded, click Start button to start: 
 		<button onclick="playSound()" disabled='true'>Start</button>
 		
 		<div></div>
 		<body id = "title">
-		Difficulty (5-10):
+		Decrease this if it's too difficult 
+		(5-10):
 		</body>
-
-		<div></div>
 		<input type='number' value='10' id='difficulty' min='5' max='10'>
+		<div></div>
+		WASD To move
 		<div id='gameCanvas'></div>
 		<script src='./Scripts/three.min.js'></script>
 		<script src='./Scripts/keyboard.js'></script>
