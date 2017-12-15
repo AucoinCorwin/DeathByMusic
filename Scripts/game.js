@@ -24,6 +24,10 @@ var beatDetect1 = [];
 var beatDetect2 = [];
 var beatDetect3 = [];
 var beatDetect4 = [];
+var prevAve1 = 0;
+var prevAve2 = 0;
+var prevAve3 = 0;
+var prevAve4 = 0;
 var beatAverages = [0, 0, 0, 0];
 var beatPeaks = [0, 0, 0, 0];
 var fileInput = document.querySelector('input[type="file"]');
@@ -484,6 +488,8 @@ function draw(){
 	var ave3 = 0;
 	var ave4 = 0;
 
+
+
 	//To reset the spotlight after a collision
 	if(spotLight.intensity > 1.5 && healthBar.scale.y > .1){
 
@@ -556,25 +562,27 @@ function draw(){
 	beatAverages[3] /= beatDetect4.length;
 
 
+
+
 	//Used to control forced time between shots, every frame is just a little too much, so I use this to alternate
 	var stc = 1;
-
+	var musicMod = 60;
 	//Moving, checking position, and checking if it needs to fire for all four turrets
 	if(turret1.ydir === 'right'){
 
-		turret1.position.y += (ave1 / 60);
+		turret1.position.y += (ave1 / musicMod);
 	}
 	else{
 
-		turret1.position.y -= (ave1 / 60);
+		turret1.position.y -= (ave1 / musicMod);
 	}
 	if(turret1.zdir === 'up'){
 
-		turret1.position.z += (ave3 / 60);
+		turret1.position.z += (ave3 / musicMod);
 	}
 	else{
 
-		turret1.position.z -= (ave3 / 60);
+		turret1.position.z -= (ave3 / musicMod);
 	}
 	if(turret1.position.y >= fieldHeight/2 && turret1.ydir === 'right'){
 
@@ -603,7 +611,13 @@ function draw(){
 	//So we take the peak, and the average, and then get .8 of the difference, and add it onto the average. If the current frequency value surpasses that, and is above a minimum threshold, we spawn a shot
 	else if(ave1 > (((beatPeaks[0] - beatAverages[0])/2) + beatAverages[0]) * 1.8 && ave1 > 80){
 
+		
 		spawnBallCenter(difficulty, turret1.position.y, turret1.position.z);
+		if(ave1 > prevAve1 * 1.05)
+		{
+			spawnBallHor(difficulty, turret1.position.y, turret1.position.z);
+
+		}
 
 		timer[3] = stc;
 	}
@@ -612,19 +626,19 @@ function draw(){
 
 	if(turret2.ydir === 'right'){
 
-		turret2.position.y += (ave1 / 60);
+		turret2.position.y += (ave1 / musicMod);
 	}
 	else{
 
-		turret2.position.y -= (ave1 / 60);
+		turret2.position.y -= (ave1 / musicMod);
 	}
 	if(turret2.zdir === 'up'){
 
-		turret2.position.z += (ave3 / 60);
+		turret2.position.z += (ave3 / musicMod);
 	}
 	else{
 
-		turret2.position.z -= (ave3 / 60);
+		turret2.position.z -= (ave3 / musicMod);
 	}
 	if(turret2.position.y >= fieldHeight/2 && turret2.ydir === 'right'){
 
@@ -653,6 +667,11 @@ function draw(){
 	else if(ave1 > (((beatPeaks[0] - beatAverages[0])/2) + beatAverages[0]) * 1.8 && ave1 > 80){
 
 		spawnBallCenter(difficulty, turret2.position.y, turret2.position.z);
+		if(ave3 > prevAve3 * 1.05)
+		{
+			spawnBallVert(difficulty, turret2.position.y, turret2.position.z);
+
+		}
 		timer[2] = stc;
 	}
 
@@ -660,19 +679,19 @@ function draw(){
 
 	if(turret3.ydir === 'right'){
 
-		turret3.position.y += (ave2 / 60);
+		turret3.position.y += (ave2 / musicMod);
 	}
 	else{
 
-		turret3.position.y -= (ave2 / 60);
+		turret3.position.y -= (ave2 / musicMod);
 	}
 	if(turret3.zdir === 'up'){
 
-		turret3.position.z += (ave4 / 60);
+		turret3.position.z += (ave4 / musicMod);
 	}
 	else{
 
-		turret3.position.z -= (ave4 / 60);
+		turret3.position.z -= (ave4 / musicMod);
 	}
 	if(turret3.position.y >= fieldHeight/2 && turret3.ydir === 'right'){
 
@@ -702,6 +721,11 @@ function draw(){
 	else if(ave2 > (((beatPeaks[1] - beatAverages[1])/2)+ beatAverages[1]) * 1.8 && ave2 > 80){
 
 		spawnBallCenter(difficulty, turret3.position.y, turret3.position.z);
+		if(ave2 > prevAve2 * 1.05)
+		{
+			spawnBallHor(difficulty, turret3.position.y, turret3.position.z);
+
+		}
 		timer[0] = stc;
 	}
 
@@ -730,19 +754,19 @@ function draw(){
 	}
 	if(turret4.ydir === 'right'){
 
-		turret4.position.y += (ave2 / 60);
+		turret4.position.y += (ave2 / musicMod);
 	}
 	else{
 
-		turret4.position.y -= (ave2 / 60);
+		turret4.position.y -= (ave2 / musicMod);
 	}
 	if(turret4.zdir === 'up'){
 
-		turret4.position.z += (ave4 / 60);
+		turret4.position.z += (ave4 / musicMod);
 	}
 	else{
 
-		turret4.position.z -= (ave4 / 60);
+		turret4.position.z -= (ave4 / musicMod);
 	}
 	if(timer[1] > 0){
 
@@ -751,6 +775,11 @@ function draw(){
 	else if(ave2 > (((beatPeaks[1] - beatAverages[1])/2)+ beatAverages[1]) * 1.8 && ave2 > 80){
 
 		spawnBallCenter(difficulty, turret4.position.y, turret4.position.z);
+		if(ave4 > prevAve4 * 1.05)
+		{
+			spawnBallVert(difficulty, turret4.position.y, turret4.position.z);
+
+		}
 		timer[1] = stc;
 	}
 
@@ -816,6 +845,10 @@ function draw(){
 
 		moveShot(shots[i]);
 	}
+	prevAve1 = ave1;
+	prevAve2 = ave2;
+	prevAve3 = ave3;
+	prevAve4 = ave4;
 	//Potentially seven shots can spawn every other frame, so we call this four times each frame to ensure we don't slowly overload on meshes and objects
 	poppable(shots[0]);
 	poppable(shots[0]);
@@ -931,6 +964,58 @@ function spawnBallCenter(speed, ypos, zpos){
 	  	new THREE.CubeGeometry(
 		10,
 		10,
+		10,
+		1,
+		1,
+		1),
+	  	
+	  	new THREE.MeshLambertMaterial({
+
+		  color: 0xD43001
+		})), xspd: -difficulty, yspd: 0, path: 'center'}
+
+		shots.push(shot);
+		scene.add(shot.mesh);
+		
+		shot.mesh.position.x = fieldWidth/2;
+		shot.mesh.position.y = ypos;
+		shot.mesh.position.z = zpos;
+}
+function spawnBallHor(speed, ypos, zpos){
+
+		var rand = Math.random();
+		rand = rand - .5;
+		shot = { mesh:new THREE.Mesh(
+
+	  	new THREE.CubeGeometry(
+		10,
+		10,
+		500,
+		1,
+		1,
+		1),
+	  	
+	  	new THREE.MeshLambertMaterial({
+
+		  color: 0xD43001
+		})), xspd: -difficulty, yspd: 0, path: 'center'}
+
+		shots.push(shot);
+		scene.add(shot.mesh);
+		
+		shot.mesh.position.x = fieldWidth/2;
+		shot.mesh.position.y = ypos;
+		shot.mesh.position.z = zpos;
+}
+function spawnBallVert(speed, ypos, zpos){
+
+		var rand = Math.random();
+		rand = rand - .5;
+		shot = { mesh:new THREE.Mesh(
+
+	  	new THREE.CubeGeometry(
+		10,
+		500,
 		10,
 		1,
 		1,
