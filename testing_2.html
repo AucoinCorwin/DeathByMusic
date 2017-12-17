@@ -22,7 +22,7 @@ var canvasCtx = canvas.getContext('2d');
 var analyser = context.createAnalyser();
 var source = null;
 var audioBuffer = null;
-analyser.fftSize = 256;
+analyser.fftSize = 2048;
 var bufferLength = analyser.frequencyBinCount;
 var dataArray = new Uint8Array(bufferLength);
 canvasCtx.clearRect(0, 0, WIDTH, HEIGHT);
@@ -74,26 +74,48 @@ fileInput.addEventListener('change', function(e) {
 
 function draw(){
   drawVisual = requestAnimationFrame(draw);
-  analyser.getByteFrequencyData(dataArray);
-  canvasCtx.fillStyle = 'rgb(0, 0, 0)';
+  analyser.getByteTimeDomainData(dataArray);
+  canvasCtx.fillStyle = 'rgb(200, 200, 200)';
   canvasCtx.fillRect(0, 0, WIDTH, HEIGHT);
+  canvasCtx.lineWidth = 2;
+  canvasCtx.strokeSyle = 'rgb(0, 0, 0)';
+  canvasCtx.beginPath();
 
-
-  var barWidth = (WIDTH / bufferLength);
-  var barHeight;
+  var sliceWidth = WIDTH * 1.0 / bufferLength;
   var x = 0;
 
 
   for(var i = 0; i < bufferLength; i++) {
-        barHeight = dataArray[i]/2;
+        var v = dataArray[i] / 128.0;
+        var y = v * HEIGHT / 2;
+        if(i === 0)
+        {
+          canvasCtx.moveTo(x, y);
+        }
+        else
+        {
+          canvasCtx.lineTo(x, y);
+        }
 
-        canvasCtx.fillStyle = 'rgb( 255,50,50)';
-        canvasCtx.fillRect(x,HEIGHT-barHeight,barWidth,barHeight);
+        x += sliceWidth;
+  }
+  canvasCtx.lineTo(canvas.width, canvas.height/2);
+  canvasCtx.stroke();
 
-        x += barWidth;
-      }
 }
 
+function getPeaksAtThreshold(data, threshold) {
+  var peaksArray = [];
+  var length = data.length;
+  for(var i = 0; i < length;) {
+    if(data[i] > threshold){
+      peaksArray.push(i);
+      i += 10000;
+    }
+    i++;
+  }
+  return peaksArray;
+}
 
 </script>
 </body>

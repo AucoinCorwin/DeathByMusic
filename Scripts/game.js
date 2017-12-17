@@ -2,7 +2,7 @@
 
 //Load all the global stuff
 var renderer, scene, camera, pointLight, spotLight;
-var fieldWidth = 400, fieldHeight = 200;
+var fieldWidth = 400, fieldHeight = 300, fieldDepth = 180;
 var moverWidth, moverHeight, moverDepth;
 var moverSpeed = 3;
 var player, turret1;
@@ -24,14 +24,27 @@ var beatDetect1 = [];
 var beatDetect2 = [];
 var beatDetect3 = [];
 var beatDetect4 = [];
+var beatDetect1a = [];
+var beatDetect2a = [];
+var beatDetect3a = [];
+var beatDetect4a = [];
+var beatDetect1b = [];
+var beatDetect2b = [];
+var beatDetect3b = [];
+var beatDetect4b = [];
 var prevAve1 = 0;
+var prevAve1a = 0;
+var prevAve1b = 0;
+var prevPrevAve1 = 0;
 var prevAve2 = 0;
 var prevAve3 = 0;
 var prevAve4 = 0;
-var beatAverages = [0, 0, 0, 0];
+var beatAverages = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
 var beatPeaks = [0, 0, 0, 0];
+var realPeaks = [0, 0, 0, 0, 0, 0, 0, 0];
 var fileInput = document.querySelector('input[type="file"]');
-
+var sampleSize = 0;
+var prevVar1 = 0;
 
 //So that stuff gets called
 function setup(){	
@@ -45,6 +58,7 @@ function playSound(){
 
   source = context.createBufferSource();
   source.buffer = audioBuffer;
+
   source.loop = false;
   source.connect(analyser);
   analyser.connect(context.destination);
@@ -57,7 +71,7 @@ function playSound(){
   	healthBar.material.color.r = 0;
   	healthBar.material.color.g = 1;
   	player.position.y = 0;
-	player.position.z = 50;
+	player.position.z = fieldDepth / 2;
   }
   source.onended = function(event) {
 
@@ -195,7 +209,7 @@ function createScene() {
 		1),
 
 	  floorMaterial);
-	floor.position.z = -51;	
+	floor.position.z = -50;	
 	scene.add(floor);
 	floor.receiveShadow = true;	
 	
@@ -208,7 +222,7 @@ function createScene() {
 			10,
 			1),
 		floorMaterial);
-	roof.position.z = 170;
+	roof.position.z = fieldDepth + 50;
 	scene.add(roof);
 		
 	
@@ -298,11 +312,11 @@ function createScene() {
 
 	player.position.x = -fieldWidth/2 -moverWidth;
 	player.position.y = 0;
-	player.position.z = 50;
+	player.position.z = fieldDepth / 2;
 
 	turret1.position.x = fieldWidth/2 - moverWidth;
 	turret1.position.y = fieldHeight/2 - moverHeight;
-	turret1.position.z = 115;
+	turret1.position.z = fieldDepth;
 
 	turret2.position.x = fieldWidth/2 - moverWidth;
 	turret2.position.y = fieldHeight/2 - moverHeight;
@@ -314,7 +328,7 @@ function createScene() {
 
 	turret4.position.x = fieldWidth/2 - moverWidth;
 	turret4.position.y = -fieldHeight/2 + moverHeight;
-	turret4.position.z = 115;
+	turret4.position.z = fieldDepth;
 	
 	turret5.position.x = fieldWidth/2 - moverWidth;
 	turret5.position.y = fieldHeight/2 - moverHeight;
@@ -339,16 +353,16 @@ function createScene() {
 		  new THREE.CubeGeometry( 
 		  400, 
 		  30, 
-		  300, 
+		  fieldDepth * 2, 
 		  1, 
 		  1,
 		  1 ),
 
 		  pillarMaterial);
 		  
-	backdrop.position.x = -10;
-	backdrop.position.y = -118;
-	backdrop.position.z = -30;
+	backdrop.position.x = 0;
+	backdrop.position.y = -fieldHeight/2 - 15;
+	backdrop.position.z = -0;
 	backdrop.castShadow = true;
 	backdrop.receiveShadow = true;		
 	scene.add(backdrop);	
@@ -357,15 +371,15 @@ function createScene() {
 		new THREE.CubeGeometry(
 			400,
 			30,
-			300,
+			fieldDepth * 2,
 			1,
 			1,
 			1 ),
 			pillarMaterial);
 
-	backdrop2.position.x = -10;
-	backdrop2.position.y = 118;
-	backdrop2.position.z = -30;
+	backdrop2.position.x = 0;
+	backdrop2.position.y = fieldHeight/2 + 15;
+	backdrop2.position.z = -0;
 	backdrop2.castShadow = true;
 	backdrop2.receiveShadow = true;
 	scene.add(backdrop2);
@@ -382,7 +396,7 @@ function createScene() {
 				1,
 				1 ),
 				visMaterial));
-		visualiser1[visualiser1.length - 1].position.y = 105;
+		visualiser1[visualiser1.length - 1].position.y = fieldHeight/2 + 1;
 		visualiser1[visualiser1.length - 1].position.x = -185 + i * 50;
 		visualiser1[visualiser1.length - 1].position.z = -150;
 		scene.add(visualiser1[visualiser1.length - 1]);
@@ -399,7 +413,7 @@ function createScene() {
 				1,
 				1 ),
 				visMaterial));
-		visualiser2[visualiser2.length - 1].position.y = -105;
+		visualiser2[visualiser2.length - 1].position.y = -fieldHeight/2 - 1;
 		visualiser2[visualiser2.length - 1].position.x = -185 + i * 50;
 		visualiser2[visualiser2.length - 1].position.z = -150;
 		scene.add(visualiser2[visualiser2.length - 1]);
@@ -419,14 +433,16 @@ function createScene() {
 	healthBar = new THREE.Mesh(
 		new THREE.CubeGeometry(
 			22,
-			205,
-			1,
+			fieldWidth,
+			25,
 			1,
 			1,
 			1 ),
 			healthMaterial);
 	scene.add(healthBar);
-	healthBar.position.x = -fieldHeight;
+	healthBar.position.x = fieldHeight;
+	healthBar.position.z = fieldDepth / 2;
+
 	var ground = new THREE.Mesh(
 
 	  new THREE.CubeGeometry( 
@@ -454,7 +470,7 @@ function createScene() {
 		
 
     spotLight = new THREE.SpotLight(0xFF0000);
-    spotLight.position.set(-200, 0, 460);
+    spotLight.position.set(-400, 0, 460);
     spotLight.intensity = 1.5;
     spotLight.castShadow = true;
     scene.add(spotLight);
@@ -466,6 +482,7 @@ function createScene() {
 function draw(){	
 
 	//Set the speed of projectiles to the value from the form
+	
 	var temp = document.getElementById('difficulty');
 	difficulty = temp.value;
 	if(difficulty < 5)
@@ -487,7 +504,14 @@ function draw(){
 	var ave2 = 0;
 	var ave3 = 0;
 	var ave4 = 0;
-
+	var ave1a = 0;
+	var ave1b = 0;
+	var ave2a = 0;
+	var ave2b = 0;
+	var ave3a = 0;
+	var ave3b = 0;
+	var ave4a = 0;
+	var ave4b = 0;
 
 
 	//To reset the spotlight after a collision
@@ -501,6 +525,12 @@ function draw(){
 	}
 
 	//Add up and average the frequency data for the four quadrants
+	//bufferLength = 128, that's 128 frequency bands...hoo boy
+	//Right now we've divided into 4 sections for purposes of energy-scouting and beat detection
+	//This is working well enough for energy detection...less so for beat detection
+	//128 seperate frequency histories is overkill...and probably a bit much
+	//Maybe let's try 8
+
 	for(var i = 0; i < bufferLength; i++){
 		if(i >= 0 && i < bufferLength/4)
 			ave1 += dataArray[i];
@@ -510,13 +540,75 @@ function draw(){
 			ave3 += dataArray[i];
 		else
 			ave4 += dataArray[i];
+		if(i >= 0 && i < bufferLength/8)
+			ave1a += dataArray[i];
+		else if(i >= bufferLength/8 && i < bufferLength/4)
+			ave1b += dataArray[i];
+		else if(i >= bufferLength/4 && i < bufferLength/8 + bufferLength/4)
+			ave2a += dataArray[i];
+		else if(i >= bufferLength/8 + bufferLength/4 && i < bufferLength/2)
+			ave2b += dataArray[i];
+		else if(i >= bufferLength/2 && i < bufferLength/2 + bufferLength/8)
+			ave3a += dataArray[i];
+		else if(i >= bufferLength/2 + bufferLength/8 && i < bufferLength/2 + bufferLength/4)
+			ave3b += dataArray[i];
+		else if(i >= bufferLength/2 + bufferLength/4 && i <= bufferLength/2 + bufferLength/4 + bufferLength/8)
+			ave4a += dataArray[i];
+		else if(i >= bufferLength/2 + bufferLength/4 + bufferLength/8 && i < bufferLength)
+			ave4b += dataArray[i];
 	}
 	ave1 /= bufferLength/4;
 	ave2 /= bufferLength/4;
 	ave3 /= bufferLength/4;
 	ave4 /= bufferLength/4;
+	ave1a /= bufferLength/8;
+	ave2a /= bufferLength/8;
+	ave3a /= bufferLength/8;
+	ave4a /= bufferLength/8;
+	ave1b /= bufferLength/8;
+	ave2b /= bufferLength/8;
+	ave3b /= bufferLength/8;
+	ave4b /= bufferLength/8;
 
-
+	for(var i = 0; i < 8; i++)
+	{
+		realPeaks[i] = 0;
+	}
+	for(var i = 0; i < beatDetect1.length; i++)
+	{
+		if(beatDetect1[i] > realPeaks[0])
+		{
+			realPeaks[0] = beatDetect1[i];
+		}
+		if(beatDetect2[i] > realPeaks[1])
+		{
+			realPeaks[1] = beatDetect2[i];
+		}
+		if(beatDetect3[i] > realPeaks[2])
+		{
+			realPeaks[2] = beatDetect3[i];
+		}
+		if(beatDetect4[i] > realPeaks[3])
+		{
+			realPeaks[3] = beatDetect4[i];
+		}
+		if(beatDetect1b[i] > realPeaks[4])
+		{
+			realPeaks[4] = beatDetect1[i];
+		}
+		if(beatDetect2b[i] > realPeaks[5])
+		{
+			realPeaks[5] = beatDetect2[i];
+		}
+		if(beatDetect3b[i] > realPeaks[6])
+		{
+			realPeaks[6] = beatDetect3[i];
+		}
+		if(beatDetect4b[i] > realPeaks[7])
+		{
+			realPeaks[7] = beatDetect4[i];
+		}
+	}
 	//Check for peaks for proper beat-detection
 	if(ave1 > beatPeaks[0])
 		beatPeaks[0] = ave1;
@@ -528,7 +620,7 @@ function draw(){
 		beatPeaks[3] = ave4;
 
 	//We only store the most recent data for purposes of beat detection, so if we're at the length, cycle the oldest one out
-	if(beatDetect1.length === 40){
+	if(beatDetect1.length === 60){
 
 		beatDetect1.pop();
 		beatDetect1.push(ave1);
@@ -538,35 +630,96 @@ function draw(){
 		beatDetect3.push(ave3);
 		beatDetect4.pop();
 		beatDetect4.push(ave4);
+		beatDetect1a.shift();
+		beatDetect1a.push(ave1b);
+		beatDetect2a.shift();
+		beatDetect2a.push(ave2b);
+		beatDetect3a.shift();
+		beatDetect3a.push(ave3b);
+		beatDetect4a.shift();
+		beatDetect4a.push(ave4b);
+		beatDetect1b.shift();
+		beatDetect1b.push(ave1b);
+		beatDetect2b.shift();
+		beatDetect2b.push(ave2b);
+		beatDetect3b.shift();
+		beatDetect3b.push(ave3b);
+		beatDetect4b.shift();
+		beatDetect4b.push(ave4b);
 	}
 	else{
 
-		beatDetect1.push(ave1);
-		beatDetect2.push(ave2);
-		beatDetect3.push(ave3);
-		beatDetect4.push(ave4);
+		beatDetect1.push(ave1a);
+		beatDetect2.push(ave2a);
+		beatDetect3.push(ave3a);
+		beatDetect4.push(ave4a);
+		beatDetect1a.push(ave1b);
+		beatDetect2a.push(ave2b);
+		beatDetect3a.push(ave3b);
+		beatDetect4a.push(ave4b);
+		beatDetect1b.push(ave1b);
+		beatDetect2b.push(ave2b);
+		beatDetect3b.push(ave3b);
+		beatDetect4b.push(ave4b);
 	}
 
+	beatAverages = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+	//We now collect the averages of the past 60 averages to set a baseline for beat detection
 
-	//We now collect the averages of the past 40 averages to set a baseline for beat detection
 	for(var i = 0; i < beatDetect1.length; i++){
-
 		beatAverages[0] += beatDetect1[i];
 		beatAverages[1] += beatDetect2[i];
 		beatAverages[2] += beatDetect3[i];
 		beatAverages[3] += beatDetect4[i];
+		beatAverages[4] += beatDetect1a[i];
+		beatAverages[5] += beatDetect2a[i];
+		beatAverages[6] += beatDetect3a[i];
+		beatAverages[7] += beatDetect4a[i];
+		beatAverages[8] += beatDetect1b[i];
+		beatAverages[9] += beatDetect2b[i];
+		beatAverages[10] += beatDetect3b[i];
+		beatAverages[11] += beatDetect4b[i];
 	}
 	beatAverages[0] /= beatDetect1.length;
 	beatAverages[1] /= beatDetect2.length;
 	beatAverages[2] /= beatDetect3.length;
 	beatAverages[3] /= beatDetect4.length;
+	beatAverages[4] /= beatDetect1a.length;
+	beatAverages[5] /= beatDetect2a.length;
+	beatAverages[6] /= beatDetect3a.length;
+	beatAverages[7] /= beatDetect4a.length;
+	beatAverages[8] /= beatDetect1b.length;
+	beatAverages[9] /= beatDetect2b.length;
+	beatAverages[10] /= beatDetect3b.length;
+	beatAverages[11] /= beatDetect4b.length;
 
 
 
 
 	//Used to control forced time between shots, every frame is just a little too much, so I use this to alternate
 	var stc = 1;
-	var musicMod = 60;
+	var musicMod = 30 + ((10 - difficulty) * 6)
+	var eVariance1 = realPeaks[0] - beatAverages[4];
+	var eVariance2 = realPeaks[1] - beatAverages[5];
+	var eVariance3 = realPeaks[2] - beatAverages[6];
+	var eVariance4 = realPeaks[3] - beatAverages[7];
+	var eVariance1b = realPeaks[4] - beatAverages[8];
+	var eVariance2b = realPeaks[5] - beatAverages[9];
+	var eVariance3b = realPeaks[6] - beatAverages[10];
+	var eVariance4b = realPeaks[7] - beatAverages[11];
+
+	//eVar1 = 250, threshy = 1.00
+	//eVar1 = 25, threshy = 1.5
+	var thresh1 = 0.0020 * eVariance1 + 1.050;
+	var threshy = 1.05;
+	/*var thresh1 = -0.002368 * eVariance1 + 1.509;
+	var thresh2 = -0.002368 * eVariance2 + 1.509;
+	var thresh3 = -0.002368 * eVariance3 + 1.509;
+	var thresh4 = -0.002368 * eVariance4 + 1.509;*/
+	//var thresh1 = threshy;
+	var thresh2 = threshy;
+	var thresh3 = threshy;
+	var thresh4 = threshy;
 	//Moving, checking position, and checking if it needs to fire for all four turrets
 	if(turret1.ydir === 'right'){
 
@@ -594,9 +747,9 @@ function draw(){
 		turret1.position.y = -fieldHeight/2;
 		turret1.ydir = 'right';
 	}
-	if(turret1.position.z >= 115 && turret1.zdir === 'up'){
+	if(turret1.position.z >= fieldDepth && turret1.zdir === 'up'){
 
-		turret1.position.z = 115;
+		turret1.position.z = fieldDepth;
 		turret1.zdir = 'down';
 	}
 	else if(turret1.position.z <= 5 && turret1.zdir === 'down'){
@@ -604,19 +757,23 @@ function draw(){
 		turret1.position.z = 5;
 		turret1.zdir = 'up';
 	}
+
 	if(timer[3] > 0){
 
 		timer[3]--;
 	}
 	//So we take the peak, and the average, and then get .8 of the difference, and add it onto the average. If the current frequency value surpasses that, and is above a minimum threshold, we spawn a shot
+	
 	else if(ave1 > (((beatPeaks[0] - beatAverages[0])/2) + beatAverages[0]) * 1.8 && ave1 > 80){
-
 		
 		spawnBallCenter(difficulty, turret1.position.y, turret1.position.z);
-		if(ave1 > prevAve1 * 1.05)
+		if(ave1a > prevAve1a + 3)
 		{
-			spawnBallHor(difficulty, turret1.position.y, turret1.position.z);
-
+			spawnBallVert(difficulty, turret1.position.y, turret1.position.z);
+		}
+		else if(ave1b > prevAve1b + 3)
+		{
+			spawnBallHor(difficulty, turret1.position.y, turret1. position.z);
 		}
 
 		timer[3] = stc;
@@ -650,9 +807,9 @@ function draw(){
 		turret2.position.y = -fieldHeight/2;
 		turret2.ydir = 'right';
 	}
-	if(turret2.position.z >= 115 && turret2.zdir === 'up'){
+	if(turret2.position.z >= fieldDepth && turret2.zdir === 'up'){
 
-		turret2.position.z = 115;
+		turret2.position.z = fieldDepth;
 		turret2.zdir = 'down';
 	}
 	else if(turret2.position.z <= 5 && turret2.zdir === 'down'){
@@ -667,9 +824,9 @@ function draw(){
 	else if(ave1 > (((beatPeaks[0] - beatAverages[0])/2) + beatAverages[0]) * 1.8 && ave1 > 80){
 
 		spawnBallCenter(difficulty, turret2.position.y, turret2.position.z);
-		if(ave3 > prevAve3 * 1.05)
+		if(ave3 > prevAve3 * thresh3)
 		{
-			spawnBallVert(difficulty, turret2.position.y, turret2.position.z);
+			//spawnBallHor(difficulty, turret2.position.y, turret2.position.z);
 
 		}
 		timer[2] = stc;
@@ -704,9 +861,9 @@ function draw(){
 		turret3.position.y = -fieldHeight/2;
 		turret3.ydir = 'right';
 	}
-	if(turret3.position.z >= 115 && turret3.zdir === 'up'){
+	if(turret3.position.z >= fieldDepth && turret3.zdir === 'up'){
 
-		turret3.position.z = 115;
+		turret3.position.z = fieldDepth;
 		turret3.zdir = 'down';
 	}
 	else if(turret3.position.z <= 5 && turret3.zdir === 'down'){
@@ -721,9 +878,9 @@ function draw(){
 	else if(ave2 > (((beatPeaks[1] - beatAverages[1])/2)+ beatAverages[1]) * 1.8 && ave2 > 80){
 
 		spawnBallCenter(difficulty, turret3.position.y, turret3.position.z);
-		if(ave2 > prevAve2 * 1.05)
+		if(ave2 > prevAve2 * thresh2)
 		{
-			spawnBallHor(difficulty, turret3.position.y, turret3.position.z);
+			//spawnBallVert(difficulty, turret3.position.y, turret3.position.z);
 
 		}
 		timer[0] = stc;
@@ -742,9 +899,9 @@ function draw(){
 		turret4.position.y = -fieldHeight/2;
 		turret4.ydir = 'right';
 	}
-	if(turret4.position.z >= 115 && turret4.zdir === 'up'){
+	if(turret4.position.z >= fieldDepth && turret4.zdir === 'up'){
 
-		turret4.position.z = 115;
+		turret4.position.z = fieldDepth;
 		turret4.zdir = 'down';
 	}
 	else if(turret4.position.z <= 5 && turret4.zdir === 'down'){
@@ -775,16 +932,17 @@ function draw(){
 	else if(ave2 > (((beatPeaks[1] - beatAverages[1])/2)+ beatAverages[1]) * 1.8 && ave2 > 80){
 
 		spawnBallCenter(difficulty, turret4.position.y, turret4.position.z);
-		if(ave4 > prevAve4 * 1.05)
+		if(ave4 > prevAve4 * thresh4)
 		{
-			spawnBallVert(difficulty, turret4.position.y, turret4.position.z);
+			//spawnBallHor(difficulty, turret4.position.y, turret4.position.z);
 
 		}
 		timer[1] = stc;
 	}
 
 
-	//We want beatPeaks to slowly degrade over time so if the overall noise of the song drops early highs don't obfuscate beats later on at lower levels
+	//We want beatPeaks to slowly degrade over time so if the overall noise of the song drops early highs don't obfuscate sounds later on
+	//Beats is a bit of a misnomer, it's more like checking energy peaks and normalizing them
 	beatPeaks[0] -= .5;
 	beatPeaks[1] -= .5;
 	beatPeaks[2] -= .5;
@@ -813,9 +971,9 @@ function draw(){
 	else if(turret5.dir === 'up'){
 
 		turret5.position.z += 50;
-		if(turret5.position.z >= 120){
+		if(turret5.position.z >= fieldDepth){
 
-			turret5.position.z = 120;
+			turret5.position.z = fieldDepth;
 			turret5.dir = 'left';
 		}
 	}
@@ -845,7 +1003,10 @@ function draw(){
 
 		moveShot(shots[i]);
 	}
+	prevPrevAve1 = prevAve1;
 	prevAve1 = ave1;
+	prevAve1a = ave1a;
+	prevAve1b = ave1b;
 	prevAve2 = ave2;
 	prevAve3 = ave3;
 	prevAve4 = ave4;
@@ -854,6 +1015,7 @@ function draw(){
 	poppable(shots[0]);
 	poppable(shots[0]);
 	poppable(shots[0]);
+	prevVar1 = eVariance1;
 	if(healthBar.scale.y >= .1)
 		playerMovement();
 
@@ -913,12 +1075,64 @@ function moveShot(shot){
 							if(healthBar.scale.y < .1){
 
 								//If we're dead end the game
-								stopSound();
+								//stopSound();
 							}
 						}
 					}
 
 				}
+			}
+		}
+		else if(shot.path === 'horbeat')
+		{
+			if (player.position.x <= shot.mesh.position.x + 5
+			&& player.position.x >= shot.mesh.position.x - 5){
+
+				if(player.position.z <= shot.mesh.position.z + 5
+				&& player.position.z >= shot.mesh.position.z - 5){
+
+					if(spotLight.intensity === 1.5){
+							spotLight.intensity = 15.5;
+						if(healthBar.scale.y > 0){
+
+								healthBar.scale.y -= .1;
+								healthBar.material.color.g = healthBar.material.color.g - .1;
+								healthBar.material.color.r = healthBar.material.color.r + .1;
+						}
+						if(healthBar.scale.y < .1){
+
+								//If we're dead end the game
+							//stopSound();
+						}
+					}
+				}
+
+			}
+		}
+		else if(shot.path === 'verbeat')
+		{
+			if (player.position.x <= shot.mesh.position.x + 5
+			&& player.position.x >= shot.mesh.position.x - 5){
+
+				if(player.position.y <= shot.mesh.position.y + 5
+				&& player.position.y >= shot.mesh.position.y - 5){
+
+					if(spotLight.intensity === 1.5){
+							spotLight.intensity = 15.5;
+						if(healthBar.scale.y > 0){
+
+								healthBar.scale.y -= .1;
+								healthBar.material.color.g = healthBar.material.color.g - .1;
+								healthBar.material.color.r = healthBar.material.color.r + .1;
+						}
+						if(healthBar.scale.y < .1){
+
+								//If we're dead end the game
+							//stopSound();
+						}
+					}
+				}
+
 			}
 		}
 		else{
@@ -942,7 +1156,7 @@ function moveShot(shot){
 							}
 							if(healthBar.scale.y < .1){
 
-								stopSound();
+								//stopSound();
 							}
 						}
 					}
@@ -989,16 +1203,16 @@ function spawnBallHor(speed, ypos, zpos){
 
 	  	new THREE.CubeGeometry(
 		10,
-		10,
 		500,
+		10,
 		1,
 		1,
 		1),
 	  	
 	  	new THREE.MeshLambertMaterial({
 
-		  color: 0xD43001
-		})), xspd: -difficulty, yspd: 0, path: 'center'}
+		  color: 0x0000FF
+		})), xspd: -difficulty, yspd: 0, path: 'horbeat'}
 
 		shots.push(shot);
 		scene.add(shot.mesh);
@@ -1015,16 +1229,16 @@ function spawnBallVert(speed, ypos, zpos){
 
 	  	new THREE.CubeGeometry(
 		10,
-		500,
 		10,
+		500,
 		1,
 		1,
 		1),
 	  	
 	  	new THREE.MeshLambertMaterial({
 
-		  color: 0xD43001
-		})), xspd: -difficulty, yspd: 0, path: 'center'}
+		  color: 0x0000FF
+		})), xspd: -difficulty, yspd: 0, path: 'verbeat'}
 
 		shots.push(shot);
 		scene.add(shot.mesh);
@@ -1103,7 +1317,7 @@ function playerMovement(){
 	}
 	if (Key.isDown(Key.W)){	
 
-		if(player.position.z >= 100){
+		if(player.position.z >= fieldDepth - 20){
 
 
 		}
