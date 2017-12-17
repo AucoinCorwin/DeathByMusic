@@ -2,7 +2,7 @@
 
 //Load all the global stuff
 var renderer, scene, camera, pointLight, spotLight;
-var fieldWidth = 400, fieldHeight = 200;
+var fieldWidth = 400, fieldHeight = 300, fieldDepth = 180;
 var moverWidth, moverHeight, moverDepth;
 var moverSpeed = 3;
 var player, turret1;
@@ -57,7 +57,7 @@ function playSound(){
   	healthBar.material.color.r = 0;
   	healthBar.material.color.g = 1;
   	player.position.y = 0;
-	player.position.z = 50;
+	player.position.z = fieldDepth / 2;
   }
   source.onended = function(event) {
 
@@ -188,27 +188,27 @@ function createScene() {
 
 	  new THREE.CubeGeometry(
 		planeWidth + 100,	
-		planeHeight,
+		planeHeight + 1000,
 		100,				
 		10,
 		10,
 		1),
 
 	  floorMaterial);
-	floor.position.z = -51;	
+	floor.position.z = -50;	
 	scene.add(floor);
 	floor.receiveShadow = true;	
 	
 	var roof = new THREE.Mesh(
 		new THREE.CubeGeometry(
 			planeWidth + 100,
-			planeHeight,
+			planeHeight + 1000,
 			100,
 			10,
 			10,
 			1),
 		floorMaterial);
-	roof.position.z = 170;
+	roof.position.z = fieldDepth + 50;
 	scene.add(roof);
 		
 	
@@ -298,7 +298,7 @@ function createScene() {
 
 	player.position.x = -fieldWidth/2 -moverWidth;
 	player.position.y = 0;
-	player.position.z = 50;
+	player.position.z = fieldDepth / 2;
 
 	turret1.position.x = fieldWidth/2 - moverWidth;
 	turret1.position.y = fieldHeight/2 - moverHeight;
@@ -337,9 +337,9 @@ function createScene() {
 	var backdrop = new THREE.Mesh(
 
 		  new THREE.CubeGeometry( 
-		  400, 
+		  fieldWidth + 100, 
 		  30, 
-		  300, 
+		  fieldDepth, 
 		  1, 
 		  1,
 		  1 ),
@@ -347,25 +347,25 @@ function createScene() {
 		  pillarMaterial);
 		  
 	backdrop.position.x = -10;
-	backdrop.position.y = -118;
-	backdrop.position.z = -30;
+	backdrop.position.y = -fieldHeight / 2 - 15;
+	backdrop.position.z = fieldDepth / 2;
 	backdrop.castShadow = true;
 	backdrop.receiveShadow = true;		
 	scene.add(backdrop);	
 
 	var backdrop2 = new THREE.Mesh(
 		new THREE.CubeGeometry(
-			400,
+			fieldWidth + 100,
 			30,
-			300,
+			fieldDepth,
 			1,
 			1,
 			1 ),
 			pillarMaterial);
 
 	backdrop2.position.x = -10;
-	backdrop2.position.y = 118;
-	backdrop2.position.z = -30;
+	backdrop2.position.y = fieldHeight / 2 + 15;
+	backdrop2.position.z = fieldDepth / 2;
 	backdrop2.castShadow = true;
 	backdrop2.receiveShadow = true;
 	scene.add(backdrop2);
@@ -382,7 +382,7 @@ function createScene() {
 				1,
 				1 ),
 				visMaterial));
-		visualiser1[visualiser1.length - 1].position.y = 105;
+		visualiser1[visualiser1.length - 1].position.y = fieldHeight /2;
 		visualiser1[visualiser1.length - 1].position.x = -185 + i * 50;
 		visualiser1[visualiser1.length - 1].position.z = -150;
 		scene.add(visualiser1[visualiser1.length - 1]);
@@ -399,7 +399,7 @@ function createScene() {
 				1,
 				1 ),
 				visMaterial));
-		visualiser2[visualiser2.length - 1].position.y = -105;
+		visualiser2[visualiser2.length - 1].position.y = -fieldHeight /2;
 		visualiser2[visualiser2.length - 1].position.x = -185 + i * 50;
 		visualiser2[visualiser2.length - 1].position.z = -150;
 		scene.add(visualiser2[visualiser2.length - 1]);
@@ -418,15 +418,17 @@ function createScene() {
 
 	healthBar = new THREE.Mesh(
 		new THREE.CubeGeometry(
-			22,
-			205,
-			1,
+			5,
+			fieldHeight,
+			20,
 			1,
 			1,
 			1 ),
 			healthMaterial);
 	scene.add(healthBar);
-	healthBar.position.x = -fieldHeight;
+	healthBar.position.x = fieldWidth / 2;
+	healthBar.position.y = 0;
+	healthBar.position.z = fieldDepth / 2;
 	var ground = new THREE.Mesh(
 
 	  new THREE.CubeGeometry( 
@@ -566,7 +568,7 @@ function draw(){
 
 	//Used to control forced time between shots, every frame is just a little too much, so I use this to alternate
 	var stc = 1;
-	var musicMod = 60;
+	var musicMod = 30 + ((10 - difficulty) * 6);
 	//Moving, checking position, and checking if it needs to fire for all four turrets
 	if(turret1.ydir === 'right'){
 
@@ -594,9 +596,9 @@ function draw(){
 		turret1.position.y = -fieldHeight/2;
 		turret1.ydir = 'right';
 	}
-	if(turret1.position.z >= 115 && turret1.zdir === 'up'){
+	if(turret1.position.z >= fieldDepth - 5 && turret1.zdir === 'up'){
 
-		turret1.position.z = 115;
+		turret1.position.z = fieldDepth - 5;
 		turret1.zdir = 'down';
 	}
 	else if(turret1.position.z <= 5 && turret1.zdir === 'down'){
@@ -613,7 +615,7 @@ function draw(){
 
 		
 		spawnBallCenter(difficulty, turret1.position.y, turret1.position.z);
-		if(ave1 > prevAve1 * 1.05)
+		if(ave1 > prevAve1 + 3)
 		{
 			spawnBallHor(difficulty, turret1.position.y, turret1.position.z);
 
@@ -650,9 +652,9 @@ function draw(){
 		turret2.position.y = -fieldHeight/2;
 		turret2.ydir = 'right';
 	}
-	if(turret2.position.z >= 115 && turret2.zdir === 'up'){
+	if(turret2.position.z >= fieldDepth - 5 && turret2.zdir === 'up'){
 
-		turret2.position.z = 115;
+		turret2.position.z = fieldDepth - 5;
 		turret2.zdir = 'down';
 	}
 	else if(turret2.position.z <= 5 && turret2.zdir === 'down'){
@@ -669,7 +671,7 @@ function draw(){
 		spawnBallCenter(difficulty, turret2.position.y, turret2.position.z);
 		if(ave3 > prevAve3 * 1.05)
 		{
-			spawnBallVert(difficulty, turret2.position.y, turret2.position.z);
+			//spawnBallVert(difficulty, turret2.position.y, turret2.position.z);
 
 		}
 		timer[2] = stc;
@@ -704,9 +706,9 @@ function draw(){
 		turret3.position.y = -fieldHeight/2;
 		turret3.ydir = 'right';
 	}
-	if(turret3.position.z >= 115 && turret3.zdir === 'up'){
+	if(turret3.position.z >= fieldDepth - 5 && turret3.zdir === 'up'){
 
-		turret3.position.z = 115;
+		turret3.position.z = fieldDepth - 5;
 		turret3.zdir = 'down';
 	}
 	else if(turret3.position.z <= 5 && turret3.zdir === 'down'){
@@ -721,9 +723,9 @@ function draw(){
 	else if(ave2 > (((beatPeaks[1] - beatAverages[1])/2)+ beatAverages[1]) * 1.8 && ave2 > 80){
 
 		spawnBallCenter(difficulty, turret3.position.y, turret3.position.z);
-		if(ave2 > prevAve2 * 1.05)
+		if(ave2 > prevAve2 + 3)
 		{
-			spawnBallHor(difficulty, turret3.position.y, turret3.position.z);
+			spawnBallVert(difficulty, turret3.position.y, turret3.position.z);
 
 		}
 		timer[0] = stc;
@@ -742,9 +744,9 @@ function draw(){
 		turret4.position.y = -fieldHeight/2;
 		turret4.ydir = 'right';
 	}
-	if(turret4.position.z >= 115 && turret4.zdir === 'up'){
+	if(turret4.position.z >= fieldDepth - 5 && turret4.zdir === 'up'){
 
-		turret4.position.z = 115;
+		turret4.position.z = fieldDepth - 5;
 		turret4.zdir = 'down';
 	}
 	else if(turret4.position.z <= 5 && turret4.zdir === 'down'){
@@ -777,7 +779,7 @@ function draw(){
 		spawnBallCenter(difficulty, turret4.position.y, turret4.position.z);
 		if(ave4 > prevAve4 * 1.05)
 		{
-			spawnBallVert(difficulty, turret4.position.y, turret4.position.z);
+			//spawnBallVert(difficulty, turret4.position.y, turret4.position.z);
 
 		}
 		timer[1] = stc;
@@ -813,9 +815,9 @@ function draw(){
 	else if(turret5.dir === 'up'){
 
 		turret5.position.z += 50;
-		if(turret5.position.z >= 120){
+		if(turret5.position.z >= fieldDepth){
 
-			turret5.position.z = 120;
+			turret5.position.z = fieldDepth;
 			turret5.dir = 'left';
 		}
 	}
@@ -1103,7 +1105,7 @@ function playerMovement(){
 	}
 	if (Key.isDown(Key.W)){	
 
-		if(player.position.z >= 100){
+		if(player.position.z >= fieldDepth - 20){
 
 
 		}
