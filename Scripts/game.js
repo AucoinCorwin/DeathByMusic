@@ -426,7 +426,7 @@ function createScene() {
 			1 ),
 			healthMaterial);
 	scene.add(healthBar);
-	healthBar.position.x = fieldWidth / 2;
+	healthBar.position.x = fieldWidth / 2 + 50;
 	healthBar.position.y = 0;
 	healthBar.position.z = fieldDepth / 2;
 	var ground = new THREE.Mesh(
