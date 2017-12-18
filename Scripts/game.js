@@ -615,7 +615,7 @@ function draw(){
 
 		
 		spawnBallCenter(difficulty, turret1.position.y, turret1.position.z);
-		if(ave1 > prevAve1 + 3)
+		if(ave1 > prevAve1 + 2)
 		{
 			spawnBallHor(difficulty, turret1.position.y, turret1.position.z);
 
@@ -723,7 +723,7 @@ function draw(){
 	else if(ave2 > (((beatPeaks[1] - beatAverages[1])/2)+ beatAverages[1]) * 1.8 && ave2 > 80){
 
 		spawnBallCenter(difficulty, turret3.position.y, turret3.position.z);
-		if(ave2 > prevAve2 + 3)
+		if(ave2 > prevAve2 + 2)
 		{
 			spawnBallVert(difficulty, turret3.position.y, turret3.position.z);
 
@@ -1041,7 +1041,7 @@ function spawnBallHor(speed, ypos, zpos){
 
 	  	new THREE.CubeGeometry(
 		10,
-		500,
+		fieldHeight * 2,
 		10,
 		1,
 		1,
@@ -1068,7 +1068,7 @@ function spawnBallVert(speed, ypos, zpos){
 	  	new THREE.CubeGeometry(
 		10,
 		10,
-		500,
+		fieldDepth * 2,
 		1,
 		1,
 		1),
