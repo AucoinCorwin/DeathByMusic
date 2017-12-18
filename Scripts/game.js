@@ -2,7 +2,7 @@
 
 //Load all the global stuff
 var renderer, scene, camera, pointLight, spotLight;
-var fieldWidth = 400, fieldHeight = 300, fieldDepth = 180;
+var fieldWidth = 500, fieldHeight = 300, fieldDepth = 180;
 var moverWidth, moverHeight, moverDepth;
 var moverSpeed = 3;
 var player, turret1;
@@ -302,7 +302,7 @@ function createScene() {
 
 	turret1.position.x = fieldWidth/2 - moverWidth;
 	turret1.position.y = fieldHeight/2 - moverHeight;
-	turret1.position.z = 115;
+	turret1.position.z = fieldDepth - 5;
 
 	turret2.position.x = fieldWidth/2 - moverWidth;
 	turret2.position.y = fieldHeight/2 - moverHeight;
@@ -314,7 +314,7 @@ function createScene() {
 
 	turret4.position.x = fieldWidth/2 - moverWidth;
 	turret4.position.y = -fieldHeight/2 + moverHeight;
-	turret4.position.z = 115;
+	turret4.position.z = fieldDepth - 5;
 	
 	turret5.position.x = fieldWidth/2 - moverWidth;
 	turret5.position.y = fieldHeight/2 - moverHeight;
@@ -568,7 +568,7 @@ function draw(){
 
 	//Used to control forced time between shots, every frame is just a little too much, so I use this to alternate
 	var stc = 1;
-	var musicMod = 30 + ((10 - difficulty) * 6);
+	var musicMod = 40 + ((10 - difficulty) * 6);
 	//Moving, checking position, and checking if it needs to fire for all four turrets
 	if(turret1.ydir === 'right'){
 
@@ -923,6 +923,56 @@ function moveShot(shot){
 				}
 			}
 		}
+		else if(shot.path === 'horizontal')
+		{
+			if (player.position.x <= shot.mesh.position.x + 5
+			&& player.position.x >= shot.mesh.position.x - 5){
+
+				if(player.position.z <= shot.mesh.position.z + 5
+				&& player.position.z >= shot.mesh.position.z - 5){
+
+					if(spotLight.intensity === 1.5){
+						spotLight.intensity = 15.5;
+						if(healthBar.scale.y > 0){
+
+							healthBar.scale.y -= .1;
+							healthBar.material.color.g = healthBar.material.color.g - .1;
+							healthBar.material.color.r = healthBar.material.color.r + .1;
+						}
+						if(healthBar.scale.y < .1){
+
+								//If we're dead end the game
+							stopSound();
+						}
+					}
+				}
+			}
+		}
+		else if(shot.path === 'vertical')
+		{
+			if (player.position.x <= shot.mesh.position.x + 5
+			&& player.position.x >= shot.mesh.position.x - 5){
+
+				if(player.position.y <= shot.mesh.position.y + 5
+				&& player.position.y >= shot.mesh.position.y - 5){
+
+					if(spotLight.intensity === 1.5){
+						spotLight.intensity = 15.5;
+						if(healthBar.scale.y > 0){
+
+							healthBar.scale.y -= .1;
+							healthBar.material.color.g = healthBar.material.color.g - .1;
+							healthBar.material.color.r = healthBar.material.color.r + .1;
+						}
+						if(healthBar.scale.y < .1){
+
+								//If we're dead end the game
+							stopSound();
+						}
+					}
+				}
+			}
+		}
 		else{
 
 			if (player.position.x <= shot.mesh.position.x + 15
@@ -991,8 +1041,8 @@ function spawnBallHor(speed, ypos, zpos){
 
 	  	new THREE.CubeGeometry(
 		10,
-		10,
 		500,
+		10,
 		1,
 		1,
 		1),
@@ -1000,7 +1050,7 @@ function spawnBallHor(speed, ypos, zpos){
 	  	new THREE.MeshLambertMaterial({
 
 		  color: 0xD43001
-		})), xspd: -difficulty, yspd: 0, path: 'center'}
+		})), xspd: -difficulty, yspd: 0, path: 'horizontal'}
 
 		shots.push(shot);
 		scene.add(shot.mesh);
@@ -1017,8 +1067,8 @@ function spawnBallVert(speed, ypos, zpos){
 
 	  	new THREE.CubeGeometry(
 		10,
-		500,
 		10,
+		500,
 		1,
 		1,
 		1),
@@ -1026,7 +1076,7 @@ function spawnBallVert(speed, ypos, zpos){
 	  	new THREE.MeshLambertMaterial({
 
 		  color: 0xD43001
-		})), xspd: -difficulty, yspd: 0, path: 'center'}
+		})), xspd: -difficulty, yspd: 0, path: 'vertical'}
 
 		shots.push(shot);
 		scene.add(shot.mesh);
