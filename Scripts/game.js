@@ -420,7 +420,7 @@ function createScene() {
 		new THREE.CubeGeometry(
 			5,
 			fieldHeight,
-			20,
+			fieldDepth,
 			1,
 			1,
 			1 ),
@@ -493,7 +493,7 @@ function draw(){
 
 
 	//To reset the spotlight after a collision
-	if(spotLight.intensity > 1.5 && healthBar.scale.y > .1){
+	if(spotLight.intensity > 1.5 && healthBar.material.color.g > .1){
 
 		spotLight.intensity -= .4;
 	}
@@ -856,7 +856,7 @@ function draw(){
 	poppable(shots[0]);
 	poppable(shots[0]);
 	poppable(shots[0]);
-	if(healthBar.scale.y >= .1)
+	if(healthBar.material.color.g >= .1)
 		playerMovement();
 
 }
@@ -908,11 +908,11 @@ function moveShot(shot){
 							spotLight.intensity = 15.5;
 							if(healthBar.scale.y > 0){
 
-								healthBar.scale.y -= .1;
+								//healthBar.scale.y -= .1;
 								healthBar.material.color.g = healthBar.material.color.g - .1;
 								healthBar.material.color.r = healthBar.material.color.r + .1;
 							}
-							if(healthBar.scale.y < .1){
+							if(healthBar.material.color.g < .1){
 
 								//If we're dead end the game
 								stopSound();
@@ -935,11 +935,11 @@ function moveShot(shot){
 						spotLight.intensity = 15.5;
 						if(healthBar.scale.y > 0){
 
-							healthBar.scale.y -= .1;
+							//healthBar.scale.y -= .1;
 							healthBar.material.color.g = healthBar.material.color.g - .1;
 							healthBar.material.color.r = healthBar.material.color.r + .1;
 						}
-						if(healthBar.scale.y < .1){
+						if(healthBar.material.color.g < .1){
 
 								//If we're dead end the game
 							stopSound();
@@ -960,11 +960,11 @@ function moveShot(shot){
 						spotLight.intensity = 15.5;
 						if(healthBar.scale.y > 0){
 
-							healthBar.scale.y -= .1;
+							//healthBar.scale.y -= .1;
 							healthBar.material.color.g = healthBar.material.color.g - .1;
 							healthBar.material.color.r = healthBar.material.color.r + .1;
 						}
-						if(healthBar.scale.y < .1){
+						if(healthBar.material.color.g < .1){
 
 								//If we're dead end the game
 							stopSound();
@@ -988,11 +988,11 @@ function moveShot(shot){
 							spotLight.intensity = 15.5;
 							if(healthBar.scale.y > 0){
 
-								healthBar.scale.y -= .1;
+								//healthBar.scale.y -= .1;
 								healthBar.material.color.g = healthBar.material.color.g - .1;
 								healthBar.material.color.r = healthBar.material.color.r + .1;
 							}
-							if(healthBar.scale.y < .1){
+							if(healthBar.material.color.g < .1){
 
 								stopSound();
 							}
