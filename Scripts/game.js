@@ -111,8 +111,8 @@ fileInput.addEventListener('change', function(e) {
 
 function createScene() {
 	//Create variables for all the materials and meshes I need
-	var WIDTH = 800,
-	  HEIGHT = 800;
+	var WIDTH = document.documentElement.clientWidth * .49,
+	  HEIGHT = document.documentElement.clientHeight * .95;
 
 	var c = document.getElementById("gameCanvas");
 
